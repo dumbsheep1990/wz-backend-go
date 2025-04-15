@@ -1,9 +1,6 @@
 # wz-backend-go
 
-<<<<<<< HEAD
-万知文站Golang后端
-=======
-微服务后端项目，基于go-zero框架实现，包含用户服务和内容服务两个核心微服务。
+万知微服务后端项目，基于go-zero框架实现。
 
 ## 项目结构
 
@@ -111,7 +108,7 @@ vi configs/content.yaml
 ./bin/content-api -f configs/content.yaml
 ```
 
-## API文档
+## 当前实现的API
 
 ### 用户服务
 
@@ -135,11 +132,8 @@ vi configs/content.yaml
 - [内容状态管理] - /api/v1/content/status
 - [热门内容管理] - /api/v1/content/hot
 
-## 开发指南
 
-项目使用 go-zero 框架进行开发，详细文档可参考[官方文档](https://go-zero.dev/)。
-
-代码生成：
+### grpc代码生成
 
 ```bash
 # 根据API文件生成HTTP服务代码
@@ -149,15 +143,3 @@ goctl api go -api api/http/user.api -dir ./internal/delivery/http
 goctl rpc protoc api/rpc/user.proto --go_out=./internal/delivery/rpc --go-grpc_out=./internal/delivery/rpc --zrpc_out=./internal/delivery/rpc
 ```
 
-## 贡献指南
-
-1. Fork 本仓库
-2. 创建你的特性分支 (git checkout -b feature/amazing-feature)
-3. 提交你的修改 (git commit -m 'Add some amazing feature')
-4. 推送到分支 (git push origin feature/amazing-feature)
-5. 创建一个 Pull Request
-
-## 许可证
-
-根据具体要求选择合适的开源许可证
->>>>>>> 508405a (微服务框架搭建及用户与文章接口定义)
