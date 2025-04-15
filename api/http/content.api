@@ -1,0 +1,330 @@
+syntax = "v1"
+
+info (
+    title: "内容服务API"
+    desc: "内容服务提供内容管理相关功能"
+    author: "wz-backend-go"
+    version: "1.0"
+)
+
+type (
+    // 分类信息
+    Category {
+        CategoryId int64 `json:"category_id"`
+        Name string `json:"name"`
+        Description string `json:"description"`
+        ParentId int64 `json:"parent_id"`
+        SortOrder int32 `json:"sort_order"`
+        Status int32 `json:"status"`
+        CreatedAt string `json:"created_at"`
+        UpdatedAt string `json:"updated_at"`
+    }
+
+    // 创建分类请求
+    CreateCategoryReq {
+        Name string `json:"name" validate:"required"`
+        Description string `json:"description,optional"`
+        ParentId int64 `json:"parent_id,optional"`
+        SortOrder int32 `json:"sort_order,optional"`
+    }
+
+    // 创建分类响应
+    CreateCategoryResp {
+        Category Category `json:"category"`
+    }
+
+    // 更新分类请求
+    UpdateCategoryReq {
+        CategoryId int64 `path:"category_id" validate:"required"`
+        Name string `json:"name,optional"`
+        Description string `json:"description,optional"`
+        ParentId int64 `json:"parent_id,optional"`
+        SortOrder int32 `json:"sort_order,optional"`
+        Status int32 `json:"status,optional"`
+    }
+
+    // 更新分类响应
+    UpdateCategoryResp {
+        Category Category `json:"category"`
+    }
+
+    // 删除分类响应
+    DeleteCategoryResp {
+        Success bool `json:"success"`
+    }
+
+    // 分类列表请求
+    ListCategoriesReq {
+        ParentId int64 `form:"parent_id,optional"`
+        Page int32 `form:"page,optional,default=1"`
+        PageSize int32 `form:"page_size,optional,default=10"`
+    }
+
+    // 分类列表响应
+    ListCategoriesResp {
+        Categories []Category `json:"categories"`
+        Total int32 `json:"total"`
+    }
+
+    // 帖子信息
+    Post {
+        PostId int64 `json:"post_id"`
+        Title string `json:"title"`
+        Content string `json:"content"`
+        UserId int64 `json:"user_id"`
+        CategoryId int64 `json:"category_id"`
+        Status int32 `json:"status"`
+        ViewCount int32 `json:"view_count"`
+        LikeCount int32 `json:"like_count"`
+        CommentCount int32 `json:"comment_count"`
+        CreatedAt string `json:"created_at"`
+        UpdatedAt string `json:"updated_at"`
+    }
+
+    // 创建帖子请求
+    CreatePostReq {
+        Title string `json:"title" validate:"required"`
+        Content string `json:"content" validate:"required"`
+        CategoryId int64 `json:"category_id" validate:"required"`
+    }
+
+    // 创建帖子响应
+    CreatePostResp {
+        Post Post `json:"post"`
+    }
+
+    // 更新帖子请求
+    UpdatePostReq {
+        PostId int64 `path:"post_id" validate:"required"`
+        Title string `json:"title,optional"`
+        Content string `json:"content,optional"`
+        CategoryId int64 `json:"category_id,optional"`
+    }
+
+    // 更新帖子响应
+    UpdatePostResp {
+        Post Post `json:"post"`
+    }
+
+    // 删除帖子响应
+    DeletePostResp {
+        Success bool `json:"success"`
+    }
+
+    // 帖子列表请求
+    ListPostsReq {
+        CategoryId int64 `form:"category_id,optional"`
+        UserId int64 `form:"user_id,optional"`
+        Status int32 `form:"status,optional"`
+        Page int32 `form:"page,optional,default=1"`
+        PageSize int32 `form:"page_size,optional,default=10"`
+    }
+
+    // 帖子列表响应
+    ListPostsResp {
+        Posts []Post `json:"posts"`
+        Total int32 `json:"total"`
+    }
+
+    // 评论信息
+    Review {
+        ReviewId int64 `json:"review_id"`
+        PostId int64 `json:"post_id"`
+        UserId int64 `json:"user_id"`
+        Content string `json:"content"`
+        Status int32 `json:"status"`
+        LikeCount int32 `json:"like_count"`
+        CreatedAt string `json:"created_at"`
+        UpdatedAt string `json:"updated_at"`
+    }
+
+    // 创建评论请求
+    CreateReviewReq {
+        PostId int64 `json:"post_id" validate:"required"`
+        Content string `json:"content" validate:"required"`
+    }
+
+    // 创建评论响应
+    CreateReviewResp {
+        Review Review `json:"review"`
+    }
+
+    // 更新评论请求
+    UpdateReviewReq {
+        ReviewId int64 `path:"review_id" validate:"required"`
+        Content string `json:"content" validate:"required"`
+    }
+
+    // 更新评论响应
+    UpdateReviewResp {
+        Review Review `json:"review"`
+    }
+
+    // 删除评论响应
+    DeleteReviewResp {
+        Success bool `json:"success"`
+    }
+
+    // 评论列表请求
+    ListReviewsReq {
+        PostId int64 `form:"post_id,optional"`
+        UserId int64 `form:"user_id,optional"`
+        Status int32 `form:"status,optional"`
+        Page int32 `form:"page,optional,default=1"`
+        PageSize int32 `form:"page_size,optional,default=10"`
+    }
+
+    // 评论列表响应
+    ListReviewsResp {
+        Reviews []Review `json:"reviews"`
+        Total int32 `json:"total"`
+    }
+
+    // 内容状态信息
+    ContentStatus {
+        StatusId int64 `json:"status_id"`
+        ResourceType string `json:"resource_type"`
+        ResourceId int64 `json:"resource_id"`
+        Status int32 `json:"status"`
+        Reason string `json:"reason"`
+        OperatorId int64 `json:"operator_id"`
+        CreatedAt string `json:"created_at"`
+        UpdatedAt string `json:"updated_at"`
+    }
+
+    // 更新内容状态请求
+    UpdateContentStatusReq {
+        ResourceType string `json:"resource_type" validate:"required"`
+        ResourceId int64 `json:"resource_id" validate:"required"`
+        Status int32 `json:"status" validate:"required"`
+        Reason string `json:"reason,optional"`
+    }
+
+    // 更新内容状态响应
+    UpdateContentStatusResp {
+        ContentStatus ContentStatus `json:"content_status"`
+    }
+
+    // 热门内容信息
+    HotContent {
+        HotId int64 `json:"hot_id"`
+        ResourceType string `json:"resource_type"`
+        ResourceId int64 `json:"resource_id"`
+        SortOrder int32 `json:"sort_order"`
+        OperatorId int64 `json:"operator_id"`
+        CreatedAt string `json:"created_at"`
+        UpdatedAt string `json:"updated_at"`
+    }
+
+    // 获取热门内容请求
+    GetHotContentReq {
+        ResourceType string `form:"resource_type,optional"`
+        Page int32 `form:"page,optional,default=1"`
+        PageSize int32 `form:"page_size,optional,default=10"`
+    }
+
+    // 获取热门内容响应
+    GetHotContentResp {
+        HotContents []HotContent `json:"hot_contents"`
+        Total int32 `json:"total"`
+    }
+
+    // 设置热门内容请求
+    SetHotContentReq {
+        ResourceType string `json:"resource_type" validate:"required"`
+        ResourceId int64 `json:"resource_id" validate:"required"`
+        SortOrder int32 `json:"sort_order,optional"`
+    }
+
+    // 设置热门内容响应
+    SetHotContentResp {
+        HotContent HotContent `json:"hot_content"`
+    }
+)
+
+@server(
+    jwt: Auth
+    group: categories
+)
+service Content {
+    @handler CreateCategory
+    post /api/v1/categories (CreateCategoryReq) returns (CreateCategoryResp)
+    
+    @handler UpdateCategory
+    put /api/v1/categories/:category_id (UpdateCategoryReq) returns (UpdateCategoryResp)
+    
+    @handler DeleteCategory
+    delete /api/v1/categories/:category_id returns (DeleteCategoryResp)
+    
+    @handler GetCategory
+    get /api/v1/categories/:category_id returns (Category)
+    
+    @handler ListCategories
+    get /api/v1/categories (ListCategoriesReq) returns (ListCategoriesResp)
+}
+
+@server(
+    jwt: Auth
+    group: posts
+)
+service Content {
+    @handler CreatePost
+    post /api/v1/posts (CreatePostReq) returns (CreatePostResp)
+    
+    @handler UpdatePost
+    put /api/v1/posts/:post_id (UpdatePostReq) returns (UpdatePostResp)
+    
+    @handler DeletePost
+    delete /api/v1/posts/:post_id returns (DeletePostResp)
+    
+    @handler GetPost
+    get /api/v1/posts/:post_id returns (Post)
+    
+    @handler ListPosts
+    get /api/v1/posts (ListPostsReq) returns (ListPostsResp)
+}
+
+@server(
+    jwt: Auth
+    group: reviews
+)
+service Content {
+    @handler CreateReview
+    post /api/v1/reviews (CreateReviewReq) returns (CreateReviewResp)
+    
+    @handler UpdateReview
+    put /api/v1/reviews/:review_id (UpdateReviewReq) returns (UpdateReviewResp)
+    
+    @handler DeleteReview
+    delete /api/v1/reviews/:review_id returns (DeleteReviewResp)
+    
+    @handler GetReview
+    get /api/v1/reviews/:review_id returns (Review)
+    
+    @handler ListReviews
+    get /api/v1/reviews (ListReviewsReq) returns (ListReviewsResp)
+}
+
+@server(
+    jwt: Auth
+    group: status
+)
+service Content {
+    @handler UpdateContentStatus
+    post /api/v1/content/status (UpdateContentStatusReq) returns (UpdateContentStatusResp)
+    
+    @handler GetContentStatus
+    get /api/v1/content/status/:resource_type/:resource_id returns (ContentStatus)
+}
+
+@server(
+    jwt: Auth
+    group: hot
+)
+service Content {
+    @handler GetHotContent
+    get /api/v1/content/hot (GetHotContentReq) returns (GetHotContentResp)
+    
+    @handler SetHotContent
+    post /api/v1/content/hot (SetHotContentReq) returns (SetHotContentResp)
+}

@@ -1,0 +1,291 @@
+syntax = "proto3";
+
+package content;
+option go_package="./content";
+
+// 内容服务提供核心内容管理功能
+service Content {
+  // 分类管理
+  rpc CreateCategory(CreateCategoryRequest) returns (CreateCategoryResponse) {}
+  rpc UpdateCategory(UpdateCategoryRequest) returns (UpdateCategoryResponse) {}
+  rpc DeleteCategory(DeleteCategoryRequest) returns (DeleteCategoryResponse) {}
+  rpc GetCategory(GetCategoryRequest) returns (GetCategoryResponse) {}
+  rpc ListCategories(ListCategoriesRequest) returns (ListCategoriesResponse) {}
+  
+  // 帖子管理
+  rpc CreatePost(CreatePostRequest) returns (CreatePostResponse) {}
+  rpc UpdatePost(UpdatePostRequest) returns (UpdatePostResponse) {}
+  rpc DeletePost(DeletePostRequest) returns (DeletePostResponse) {}
+  rpc GetPost(GetPostRequest) returns (GetPostResponse) {}
+  rpc ListPosts(ListPostsRequest) returns (ListPostsResponse) {}
+  
+  // 评论管理
+  rpc CreateReview(CreateReviewRequest) returns (CreateReviewResponse) {}
+  rpc UpdateReview(UpdateReviewRequest) returns (UpdateReviewResponse) {}
+  rpc DeleteReview(DeleteReviewRequest) returns (DeleteReviewResponse) {}
+  rpc GetReview(GetReviewRequest) returns (GetReviewResponse) {}
+  rpc ListReviews(ListReviewsRequest) returns (ListReviewsResponse) {}
+  
+  // 内容状态管理
+  rpc UpdateContentStatus(UpdateContentStatusRequest) returns (UpdateContentStatusResponse) {}
+  rpc GetContentStatus(GetContentStatusRequest) returns (GetContentStatusResponse) {}
+  
+  // 热门内容管理
+  rpc GetHotContent(GetHotContentRequest) returns (GetHotContentResponse) {}
+  rpc SetHotContent(SetHotContentRequest) returns (SetHotContentResponse) {}
+}
+
+// 分类消息
+message Category {
+  int64 category_id = 1;
+  string name = 2;
+  string description = 3;
+  int64 parent_id = 4;
+  int32 sort_order = 5;
+  int32 status = 6;
+  string created_at = 7;
+  string updated_at = 8;
+}
+
+message CreateCategoryRequest {
+  string name = 1;
+  string description = 2;
+  int64 parent_id = 3;
+  int32 sort_order = 4;
+}
+
+message CreateCategoryResponse {
+  Category category = 1;
+}
+
+message UpdateCategoryRequest {
+  int64 category_id = 1;
+  string name = 2;
+  string description = 3;
+  int64 parent_id = 4;
+  int32 sort_order = 5;
+  int32 status = 6;
+}
+
+message UpdateCategoryResponse {
+  Category category = 1;
+}
+
+message DeleteCategoryRequest {
+  int64 category_id = 1;
+}
+
+message DeleteCategoryResponse {
+  bool success = 1;
+}
+
+message GetCategoryRequest {
+  int64 category_id = 1;
+}
+
+message GetCategoryResponse {
+  Category category = 1;
+}
+
+message ListCategoriesRequest {
+  int64 parent_id = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message ListCategoriesResponse {
+  repeated Category categories = 1;
+  int32 total = 2;
+}
+
+// 帖子消息
+message Post {
+  int64 post_id = 1;
+  string title = 2;
+  string content = 3;
+  int64 user_id = 4;
+  int64 category_id = 5;
+  int32 status = 6;
+  int32 view_count = 7;
+  int32 like_count = 8;
+  int32 comment_count = 9;
+  string created_at = 10;
+  string updated_at = 11;
+}
+
+message CreatePostRequest {
+  string title = 1;
+  string content = 2;
+  int64 user_id = 3;
+  int64 category_id = 4;
+}
+
+message CreatePostResponse {
+  Post post = 1;
+}
+
+message UpdatePostRequest {
+  int64 post_id = 1;
+  string title = 2;
+  string content = 3;
+  int64 category_id = 4;
+}
+
+message UpdatePostResponse {
+  Post post = 1;
+}
+
+message DeletePostRequest {
+  int64 post_id = 1;
+}
+
+message DeletePostResponse {
+  bool success = 1;
+}
+
+message GetPostRequest {
+  int64 post_id = 1;
+}
+
+message GetPostResponse {
+  Post post = 1;
+}
+
+message ListPostsRequest {
+  int64 category_id = 1;
+  int64 user_id = 2;
+  int32 status = 3;
+  int32 page = 4;
+  int32 page_size = 5;
+}
+
+message ListPostsResponse {
+  repeated Post posts = 1;
+  int32 total = 2;
+}
+
+// 评论消息
+message Review {
+  int64 review_id = 1;
+  int64 post_id = 2;
+  int64 user_id = 3;
+  string content = 4;
+  int32 status = 5;
+  int32 like_count = 6;
+  string created_at = 7;
+  string updated_at = 8;
+}
+
+message CreateReviewRequest {
+  int64 post_id = 1;
+  int64 user_id = 2;
+  string content = 3;
+}
+
+message CreateReviewResponse {
+  Review review = 1;
+}
+
+message UpdateReviewRequest {
+  int64 review_id = 1;
+  string content = 2;
+}
+
+message UpdateReviewResponse {
+  Review review = 1;
+}
+
+message DeleteReviewRequest {
+  int64 review_id = 1;
+}
+
+message DeleteReviewResponse {
+  bool success = 1;
+}
+
+message GetReviewRequest {
+  int64 review_id = 1;
+}
+
+message GetReviewResponse {
+  Review review = 1;
+}
+
+message ListReviewsRequest {
+  int64 post_id = 1;
+  int64 user_id = 2;
+  int32 status = 3;
+  int32 page = 4;
+  int32 page_size = 5;
+}
+
+message ListReviewsResponse {
+  repeated Review reviews = 1;
+  int32 total = 2;
+}
+
+// 内容状态消息
+message ContentStatus {
+  int64 status_id = 1;
+  string resource_type = 2;
+  int64 resource_id = 3;
+  int32 status = 4;
+  string reason = 5;
+  int64 operator_id = 6;
+  string created_at = 7;
+  string updated_at = 8;
+}
+
+message UpdateContentStatusRequest {
+  string resource_type = 1;
+  int64 resource_id = 2;
+  int32 status = 3;
+  string reason = 4;
+  int64 operator_id = 5;
+}
+
+message UpdateContentStatusResponse {
+  ContentStatus content_status = 1;
+}
+
+message GetContentStatusRequest {
+  string resource_type = 1;
+  int64 resource_id = 2;
+}
+
+message GetContentStatusResponse {
+  ContentStatus content_status = 1;
+}
+
+// 热门内容消息
+message HotContent {
+  int64 hot_id = 1;
+  string resource_type = 2;
+  int64 resource_id = 3;
+  int32 sort_order = 4;
+  int64 operator_id = 5;
+  string created_at = 6;
+  string updated_at = 7;
+}
+
+message GetHotContentRequest {
+  string resource_type = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message GetHotContentResponse {
+  repeated HotContent hot_contents = 1;
+  int32 total = 2;
+}
+
+message SetHotContentRequest {
+  string resource_type = 1;
+  int64 resource_id = 2;
+  int32 sort_order = 3;
+  int64 operator_id = 4;
+}
+
+message SetHotContentResponse {
+  HotContent hot_content = 1;
+}

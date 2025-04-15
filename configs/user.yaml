@@ -1,0 +1,21 @@
+Name: user-api
+Host: 0.0.0.0
+Port: 8000
+Mode: dev
+
+Log:
+  ServiceName: user-api
+  Level: info
+
+DB:
+  DataSource: root:password@tcp(localhost:3306)/wz_backend?charset=utf8mb4&parseTime=true&loc=Asia%2FShanghai
+
+Auth:
+  AccessSecret: your-access-secret-key-for-jwt-token
+  AccessExpire: 86400  # 24 hours
+
+UserRpc:
+  Etcd:
+    Hosts:
+      - localhost:2379
+    Key: user.rpc

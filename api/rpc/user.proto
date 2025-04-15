@@ -1,0 +1,129 @@
+syntax = "proto3";
+
+package user;
+option go_package="./user";
+
+// 用户服务提供核心用户管理功能
+service User {
+  // 用户注册
+  rpc Register(RegisterRequest) returns (RegisterResponse) {}
+  // 用户登录
+  rpc Login(LoginRequest) returns (LoginResponse) {}
+  // 获取用户信息
+  rpc GetUser(GetUserRequest) returns (GetUserResponse) {}
+  // 更新用户信息
+  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse) {}
+  // 验证用户
+  rpc VerifyUser(VerifyUserRequest) returns (VerifyUserResponse) {}
+  // 企业认证
+  rpc VerifyCompany(VerifyCompanyRequest) returns (VerifyCompanyResponse) {}
+  // 获取用户行为分析
+  rpc GetUserBehavior(GetUserBehaviorRequest) returns (GetUserBehaviorResponse) {}
+}
+
+// 注册请求
+message RegisterRequest {
+  string username = 1;
+  string password = 2;
+  string email = 3;
+  string phone = 4;
+}
+
+// 注册响应
+message RegisterResponse {
+  int64 user_id = 1;
+  string username = 2;
+  string token = 3;
+}
+
+// 登录请求
+message LoginRequest {
+  string username = 1;
+  string password = 2;
+}
+
+// 登录响应
+message LoginResponse {
+  int64 user_id = 1;
+  string username = 2;
+  string token = 3;
+}
+
+// 获取用户请求
+message GetUserRequest {
+  int64 user_id = 1;
+}
+
+// 获取用户响应
+message GetUserResponse {
+  int64 user_id = 1;
+  string username = 2;
+  string email = 3;
+  string phone = 4;
+  int32 status = 5; // 1: 活跃, 0: 未激活
+  bool is_verified = 6;
+  bool is_company_verified = 7;
+  string created_at = 8;
+  string updated_at = 9;
+}
+
+// 更新用户请求
+message UpdateUserRequest {
+  int64 user_id = 1;
+  string username = 2;
+  string email = 3;
+  string phone = 4;
+  string password = 5;
+}
+
+// 更新用户响应
+message UpdateUserResponse {
+  bool success = 1;
+}
+
+// 验证用户请求
+message VerifyUserRequest {
+  int64 user_id = 1;
+  string verification_code = 2;
+}
+
+// 验证用户响应
+message VerifyUserResponse {
+  bool success = 1;
+}
+
+// 验证企业请求
+message VerifyCompanyRequest {
+  int64 user_id = 1;
+  string company_name = 2;
+  string business_license = 3;
+  string contact_person = 4;
+  string contact_phone = 5;
+}
+
+// 验证企业响应
+message VerifyCompanyResponse {
+  bool success = 1;
+}
+
+// 获取用户行为请求
+message GetUserBehaviorRequest {
+  int64 user_id = 1;
+  string start_time = 2;
+  string end_time = 3;
+}
+
+// 获取用户行为响应
+message GetUserBehaviorResponse {
+  repeated UserBehavior behaviors = 1;
+}
+
+// 用户行为
+message UserBehavior {
+  int64 behavior_id = 1;
+  int64 user_id = 2;
+  string action = 3; // 查看, 点赞, 评论等
+  string resource_type = 4; // 帖子, 分类等
+  int64 resource_id = 5;
+  string created_at = 6;
+}

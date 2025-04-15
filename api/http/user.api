@@ -1,0 +1,128 @@
+syntax = "v1"
+
+info (
+	title:   "用户服务API"
+	desc:    "用户服务提供用户管理相关功能"
+	author:  "wz-backend-go"
+	version: "1.0"
+)
+
+type (
+	// 用户注册请求
+	RegisterReq {
+		Username string `json:"username" validate:"required"`
+		Password string `json:"password" validate:"required"`
+		Email    string `json:"email" validate:"required,email"`
+		Phone    string `json:"phone" validate:"required"`
+	}
+	// 注册响应
+	RegisterResp {
+		UserId   int64  `json:"user_id"`
+		Username string `json:"username"`
+		Token    string `json:"token"`
+	}
+	// 登录请求
+	LoginReq {
+		Username string `json:"username" validate:"required"`
+		Password string `json:"password" validate:"required"`
+	}
+	// 登录响应
+	LoginResp {
+		UserId   int64  `json:"user_id"`
+		Username string `json:"username"`
+		Token    string `json:"token"`
+	}
+	// 用户信息
+	UserInfo {
+		UserId            int64  `json:"user_id"`
+		Username          string `json:"username"`
+		Email             string `json:"email"`
+		Phone             string `json:"phone"`
+		Status            int32  `json:"status"`
+		IsVerified        bool   `json:"is_verified"`
+		IsCompanyVerified bool   `json:"is_company_verified"`
+		CreatedAt         string `json:"created_at"`
+		UpdatedAt         string `json:"updated_at"`
+	}
+	// 更新用户请求
+	UpdateUserReq {
+		Username string `json:"username,optional"`
+		Email    string `json:"email,optional"`
+		Phone    string `json:"phone,optional"`
+		Password string `json:"password,optional"`
+	}
+	// 更新用户响应
+	UpdateUserResp {
+		Success bool `json:"success"`
+	}
+	// 用户验证请求
+	VerifyUserReq {
+		VerificationCode string `json:"verification_code" validate:"required"`
+	}
+	// 用户验证响应
+	VerifyUserResp {
+		Success bool `json:"success"`
+	}
+	// 企业验证请求
+	VerifyCompanyReq {
+		CompanyName     string `json:"company_name" validate:"required"`
+		BusinessLicense string `json:"business_license" validate:"required"`
+		ContactPerson   string `json:"contact_person" validate:"required"`
+		ContactPhone    string `json:"contact_phone" validate:"required"`
+	}
+	// 企业验证响应
+	VerifyCompanyResp {
+		Success bool `json:"success"`
+	}
+	// 用户行为请求
+	UserBehaviorReq {
+		StartTime string `json:"start_time,optional"`
+		EndTime   string `json:"end_time,optional"`
+	}
+	// 用户行为记录
+	UserBehaviorRecord {
+		BehaviorId   int64  `json:"behavior_id"`
+		UserId       int64  `json:"user_id"`
+		Action       string `json:"action"`
+		ResourceType string `json:"resource_type"`
+		ResourceId   int64  `json:"resource_id"`
+		CreatedAt    string `json:"created_at"`
+	}
+	// 用户行为响应
+	UserBehaviorResp {
+		Behaviors []UserBehaviorRecord `json:"behaviors"`
+	}
+)
+
+@server (
+	group: auth
+)
+service User {
+	@handler Register
+	post /api/v1/auth/register (RegisterReq) returns (RegisterResp)
+
+	@handler Login
+	post /api/v1/auth/login (LoginReq) returns (LoginResp)
+}
+
+@server (
+	jwt:   Auth
+	group: users
+)
+service User {
+	@handler GetUserInfo
+	get /api/v1/users/info returns (UserInfo)
+
+	@handler UpdateUserInfo
+	put /api/v1/users/info (UpdateUserReq) returns (UpdateUserResp)
+
+	@handler VerifyUser
+	post /api/v1/users/verify (VerifyUserReq) returns (VerifyUserResp)
+
+	@handler VerifyCompany
+	post /api/v1/users/verify-company (VerifyCompanyReq) returns (VerifyCompanyResp)
+
+	@handler GetUserBehavior
+	get /api/v1/users/behavior (UserBehaviorReq) returns (UserBehaviorResp)
+}
+
