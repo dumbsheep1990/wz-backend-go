@@ -1,0 +1,317 @@
+syntax = "proto3";
+
+package trade;
+option go_package="./trade";
+
+// 交易服务提供核心交易功能
+service Trade {
+  // 订单管理
+  rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse) {}
+  rpc GetOrder(GetOrderRequest) returns (GetOrderResponse) {}
+  rpc ListOrders(ListOrdersRequest) returns (ListOrdersResponse) {}
+  rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse) {}
+  rpc UpdateOrderStatus(UpdateOrderStatusRequest) returns (UpdateOrderStatusResponse) {}
+  
+  // 支付管理
+  rpc ProcessPayment(ProcessPaymentRequest) returns (ProcessPaymentResponse) {}
+  rpc PaymentCallback(PaymentCallbackRequest) returns (PaymentCallbackResponse) {}
+  
+  // 退款管理
+  rpc CreateRefund(CreateRefundRequest) returns (CreateRefundResponse) {}
+  rpc GetRefund(GetRefundRequest) returns (GetRefundResponse) {}
+  rpc ListRefunds(ListRefundsRequest) returns (ListRefundsResponse) {}
+  rpc ProcessRefund(ProcessRefundRequest) returns (ProcessRefundResponse) {}
+  
+  // 账户管理
+  rpc GetBalance(GetBalanceRequest) returns (GetBalanceResponse) {}
+  rpc GetTransactions(GetTransactionsRequest) returns (GetTransactionsResponse) {}
+  
+  // 报表管理
+  rpc GetFinancialReport(GetFinancialReportRequest) returns (GetFinancialReportResponse) {}
+}
+
+// 订单相关消息
+message Order {
+  string order_id = 1;       // 订单ID
+  int64 user_id = 2;         // 用户ID
+  int64 product_id = 3;      // 产品ID
+  string product_type = 4;   // 产品类型
+  int32 quantity = 5;        // 数量
+  double amount = 6;         // 金额
+  string currency = 7;       // 货币类型
+  string status = 8;         // 订单状态
+  string payment_id = 9;     // 支付ID
+  string payment_type = 10;  // 支付类型
+  string payment_time = 11;  // 支付时间
+  string description = 12;   // 描述
+  string metadata = 13;      // 元数据，JSON格式
+  string created_at = 14;    // 创建时间
+  string updated_at = 15;    // 更新时间
+  string expire_time = 16;   // 过期时间
+}
+
+message CreateOrderRequest {
+  int64 user_id = 1;         // 用户ID
+  int64 product_id = 2;      // 产品ID
+  string product_type = 3;   // 产品类型
+  int32 quantity = 4;        // 数量
+  double amount = 5;         // 金额
+  string currency = 6;       // 货币类型，默认CNY
+  string description = 7;    // 描述
+  string metadata = 8;       // 元数据，JSON格式
+  string client_ip = 9;      // 客户端IP
+  string device_id = 10;     // 设备ID
+}
+
+message CreateOrderResponse {
+  string order_id = 1;       // 订单ID
+  double amount = 2;         // 金额
+  string currency = 3;       // 货币类型
+  string status = 4;         // 订单状态
+  string created_at = 5;     // 创建时间
+  string expire_time = 6;    // 过期时间
+  string payment_url = 7;    // 支付链接
+}
+
+message GetOrderRequest {
+  string order_id = 1;       // 订单ID
+  int64 user_id = 2;         // 用户ID，用于权限验证
+}
+
+message GetOrderResponse {
+  Order order = 1;           // 订单详情
+}
+
+message ListOrdersRequest {
+  int64 user_id = 1;         // 用户ID
+  string status = 2;         // 订单状态
+  string start_time = 3;     // 开始时间
+  string end_time = 4;       // 结束时间
+  string product_type = 5;   // 产品类型
+  int32 page = 6;            // 页码
+  int32 page_size = 7;       // 每页数量
+}
+
+message ListOrdersResponse {
+  int32 total = 1;           // 总数
+  int32 page = 2;            // 当前页
+  int32 size = 3;            // 每页数量
+  repeated Order orders = 4; // 订单列表
+}
+
+message CancelOrderRequest {
+  string order_id = 1;       // 订单ID
+  int64 user_id = 2;         // 用户ID，用于权限验证
+  string reason = 3;         // 取消原因
+}
+
+message CancelOrderResponse {
+  bool success = 1;          // 是否成功
+  string order_id = 2;       // 订单ID
+  string status = 3;         // 订单状态
+  string message = 4;        // 消息
+}
+
+message UpdateOrderStatusRequest {
+  string order_id = 1;       // 订单ID
+  string status = 2;         // 新状态
+  string operator_id = 3;    // 操作员ID
+  string reason = 4;         // 原因
+}
+
+message UpdateOrderStatusResponse {
+  bool success = 1;          // 是否成功
+  string order_id = 2;       // 订单ID
+  string status = 3;         // 更新后的状态
+  string message = 4;        // 消息
+}
+
+// 支付相关消息
+message ProcessPaymentRequest {
+  string order_id = 1;       // 订单ID
+  string payment_type = 2;   // 支付类型: alipay, wechat, bank_transfer
+  double amount = 3;         // 金额
+  string currency = 4;       // 货币类型
+  string return_url = 5;     // 支付完成后的返回URL
+  string notify_url = 6;     // 支付回调通知URL
+  string client_ip = 7;      // 客户端IP
+  string metadata = 8;       // 元数据，JSON格式
+}
+
+message ProcessPaymentResponse {
+  bool success = 1;          // 是否成功
+  string payment_id = 2;     // 支付ID
+  string order_id = 3;       // 订单ID
+  string payment_url = 4;    // 支付URL
+  string qr_code = 5;        // 二维码内容
+  string status = 6;         // 支付状态
+  string message = 7;        // 消息
+}
+
+message PaymentCallbackRequest {
+  string payment_id = 1;     // 支付ID
+  string order_id = 2;       // 订单ID
+  double amount = 3;         // 金额
+  string currency = 4;       // 货币类型
+  string status = 5;         // 支付状态
+  string payment_type = 6;   // 支付类型
+  string payment_time = 7;   // 支付时间
+  string signature = 8;      // 签名
+  string raw_data = 9;       // 原始数据
+  string transaction_id = 10; // 第三方交易ID
+}
+
+message PaymentCallbackResponse {
+  bool success = 1;          // 是否成功
+  string message = 2;        // 消息
+}
+
+// 退款相关消息
+message Refund {
+  string refund_id = 1;      // 退款ID
+  string order_id = 2;       // 订单ID
+  int64 user_id = 3;         // 用户ID
+  double amount = 4;         // 退款金额
+  string currency = 5;       // 货币类型
+  string status = 6;         // 退款状态
+  string reason = 7;         // 退款原因
+  string description = 8;    // 描述
+  string processed_by = 9;   // 处理人
+  string process_time = 10;  // 处理时间
+  string created_at = 11;    // 创建时间
+  string updated_at = 12;    // 更新时间
+  string refund_transaction_id = 13; // 退款交易ID
+}
+
+message CreateRefundRequest {
+  string order_id = 1;       // 订单ID
+  int64 user_id = 2;         // 用户ID
+  double amount = 3;         // 退款金额
+  string reason = 4;         // 退款原因
+  string description = 5;    // 描述
+}
+
+message CreateRefundResponse {
+  string refund_id = 1;      // 退款ID
+  string order_id = 2;       // 订单ID
+  double amount = 3;         // 退款金额
+  string status = 4;         // 退款状态
+  string created_at = 5;     // 创建时间
+}
+
+message GetRefundRequest {
+  string refund_id = 1;      // 退款ID
+  int64 user_id = 2;         // 用户ID，用于权限验证
+}
+
+message GetRefundResponse {
+  Refund refund = 1;         // 退款详情
+}
+
+message ListRefundsRequest {
+  int64 user_id = 1;         // 用户ID
+  string order_id = 2;       // 订单ID
+  string status = 3;         // 退款状态
+  string start_time = 4;     // 开始时间
+  string end_time = 5;       // 结束时间
+  int32 page = 6;            // 页码
+  int32 page_size = 7;       // 每页数量
+}
+
+message ListRefundsResponse {
+  int32 total = 1;            // 总数
+  int32 page = 2;             // 当前页
+  int32 size = 3;             // 每页数量
+  repeated Refund refunds = 4; // 退款列表
+}
+
+message ProcessRefundRequest {
+  string refund_id = 1;       // 退款ID
+  string action = 2;          // 操作：approve, reject
+  string comment = 3;         // 备注
+  string processed_by = 4;    // 处理人
+}
+
+message ProcessRefundResponse {
+  bool success = 1;           // 是否成功
+  string refund_id = 2;       // 退款ID
+  string status = 3;          // 退款状态
+  string message = 4;         // 消息
+}
+
+// 账户相关消息
+message BalanceItem {
+  string currency = 1;        // 货币类型
+  double available = 2;       // 可用余额
+  double pending = 3;         // 待结算余额
+  double frozen = 4;          // 冻结余额
+}
+
+message GetBalanceRequest {
+  int64 user_id = 1;          // 用户ID
+}
+
+message GetBalanceResponse {
+  int64 user_id = 1;                   // 用户ID
+  repeated BalanceItem balances = 2;   // 余额列表
+  string updated_at = 3;               // 更新时间
+}
+
+message TransactionItem {
+  string transaction_id = 1;   // 交易ID
+  int64 user_id = 2;           // 用户ID
+  string related_id = 3;       // 关联ID（订单ID或退款ID）
+  string type = 4;             // 交易类型：payment, refund, withdraw, adjustment
+  double amount = 5;           // 金额
+  string currency = 6;         // 货币类型
+  string status = 7;           // 交易状态
+  string description = 8;      // 描述
+  string metadata = 9;         // 元数据，JSON格式
+  string created_at = 10;      // 创建时间
+}
+
+message GetTransactionsRequest {
+  int64 user_id = 1;           // 用户ID
+  string type = 2;             // 交易类型
+  string status = 3;           // 交易状态
+  string start_time = 4;       // 开始时间
+  string end_time = 5;         // 结束时间
+  int32 page = 6;              // 页码
+  int32 page_size = 7;         // 每页数量
+}
+
+message GetTransactionsResponse {
+  int32 total = 1;                              // 总数
+  int32 page = 2;                               // 当前页
+  int32 size = 3;                               // 每页数量
+  repeated TransactionItem transactions = 4;    // 交易记录
+}
+
+// 报表相关消息
+message ReportDataPoint {
+  string date = 1;            // 日期
+  double income = 2;          // 收入
+  double refund = 3;          // 退款
+  double net = 4;             // 净收入
+  int32 order_count = 5;      // 订单数
+  int32 user_count = 6;       // 用户数
+}
+
+message GetFinancialReportRequest {
+  string start_time = 1;      // 开始时间
+  string end_time = 2;        // 结束时间
+  string type = 3;            // 报表类型：daily, weekly, monthly
+  string currency = 4;        // 货币类型
+}
+
+message GetFinancialReportResponse {
+  string start_time = 1;                        // 开始时间
+  string end_time = 2;                          // 结束时间
+  string currency = 3;                          // 货币类型
+  double total_income = 4;                      // 总收入
+  double total_refund = 5;                      // 总退款
+  double total_net = 6;                         // 总净收入
+  int32 order_count = 7;                        // 订单数
+  int32 user_count = 8;                         // 用户数
+  repeated ReportDataPoint data_points = 9;     // 数据点
+}

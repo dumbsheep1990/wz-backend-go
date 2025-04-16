@@ -1,0 +1,179 @@
+syntax = "proto3";
+
+package search;
+option go_package="./search";
+
+// 搜索服务提供核心搜索功能
+service Search {
+  // 全文搜索
+  rpc SearchContent(SearchContentRequest) returns (SearchContentResponse) {}
+  // 搜索推荐
+  rpc GetSuggestions(GetSuggestionsRequest) returns (GetSuggestionsResponse) {}
+  // 获取热搜词
+  rpc GetHotSearches(GetHotSearchesRequest) returns (GetHotSearchesResponse) {}
+  // 管理热搜词
+  rpc AddHotSearch(AddHotSearchRequest) returns (AddHotSearchResponse) {}
+  rpc DeleteHotSearch(DeleteHotSearchRequest) returns (DeleteHotSearchResponse) {}
+  // 搜索日志管理
+  rpc LogSearchQuery(LogSearchQueryRequest) returns (LogSearchQueryResponse) {}
+  rpc GetSearchLogs(GetSearchLogsRequest) returns (GetSearchLogsResponse) {}
+}
+
+// 搜索请求
+message SearchContentRequest {
+  string keyword = 1;          // 搜索关键词
+  string category = 2;         // 分类
+  repeated string tags = 3;    // 标签列表
+  double longitude = 4;        // 经度
+  double latitude = 5;         // 纬度
+  int32 distance = 6;          // 距离限制，单位：km
+  int32 page = 7;              // 页码
+  int32 page_size = 8;         // 每页数量
+  string sort_by = 9;          // 排序方式：rel(相关度)、time(时间)、pop(热度)
+  string time_range = 10;      // 时间范围：day、week、month、year
+  string user_id = 11;         // 用户ID，用于个性化搜索
+  string device_id = 12;       // 设备ID
+  string ip = 13;              // IP地址
+}
+
+// 搜索结果项
+message SearchResultItem {
+  string id = 1;              // 结果ID
+  string title = 2;           // 标题
+  string content = 3;         // 内容摘要
+  string category = 4;        // 分类
+  repeated string tags = 5;   // 标签
+  string author = 6;          // 作者
+  string author_id = 7;       // 作者ID
+  string created_at = 8;      // 创建时间
+  string updated_at = 9;      // 更新时间
+  int32 view_count = 10;      // 浏览数
+  int32 like_count = 11;      // 点赞数
+  double distance = 12;       // 距离，单位km
+  double score = 13;          // 相关度得分
+  repeated string highlights = 14;  // 高亮内容
+  string resource_url = 15;   // 资源URL
+  string resource_type = 16;  // 资源类型：post、review等
+}
+
+// 搜索响应
+message SearchContentResponse {
+  int32 total = 1;                          // 总数
+  int32 page = 2;                           // 当前页
+  int32 page_size = 3;                      // 每页数量
+  repeated SearchResultItem results = 4;    // 搜索结果
+  int32 time_cost = 5;                     // 搜索耗时(ms)
+}
+
+// 获取搜索建议请求
+message GetSuggestionsRequest {
+  string keyword = 1;   // 输入关键词
+  int32 limit = 2;      // 返回数量限制
+  string category = 3;  // 分类限制
+  string user_id = 4;   // 用户ID，用于个性化建议
+}
+
+// 获取搜索建议响应
+message GetSuggestionsResponse {
+  repeated string suggestions = 1;  // 建议列表
+}
+
+// 获取热搜词请求
+message GetHotSearchesRequest {
+  string category = 1;  // 分类
+  int32 limit = 2;      // 数量限制
+}
+
+// 热搜词项
+message HotSearchItem {
+  string id = 1;        // 热搜ID
+  string keyword = 2;   // 关键词
+  int32 count = 3;      // 搜索次数
+  int32 trend = 4;      // 趋势：1上升，0持平，-1下降
+  bool is_promoted = 5; // 是否是推广热搜
+  string category = 6;  // 分类
+  int32 sort_order = 7; // 排序权重
+}
+
+// 获取热搜词响应
+message GetHotSearchesResponse {
+  repeated HotSearchItem hot_searches = 1;  // 热搜列表
+  string updated_at = 2;                    // 更新时间
+}
+
+// 添加热搜请求
+message AddHotSearchRequest {
+  string keyword = 1;     // 关键词
+  string category = 2;    // 分类
+  bool is_promoted = 3;   // 是否推广
+  int32 sort_order = 4;   // 排序
+  string operator_id = 5; // 操作员ID
+}
+
+// 添加热搜响应
+message AddHotSearchResponse {
+  bool success = 1;    // 是否成功
+  string message = 2;  // 消息
+  string id = 3;       // 新增热搜的ID
+}
+
+// 删除热搜请求
+message DeleteHotSearchRequest {
+  string id = 1;         // 热搜ID
+  string operator_id = 2; // 操作员ID
+}
+
+// 删除热搜响应
+message DeleteHotSearchResponse {
+  bool success = 1;   // 是否成功
+  string message = 2; // 消息
+}
+
+// 记录搜索查询请求
+message LogSearchQueryRequest {
+  string user_id = 1;      // 用户ID
+  string keyword = 2;      // 搜索关键词
+  string category = 3;     // 分类
+  repeated string tags = 4; // 标签
+  string location = 5;     // 位置
+  int32 result_num = 6;    // 结果数量
+  string ip = 7;           // IP地址
+  string device_id = 8;    // 设备ID
+}
+
+// 记录搜索查询响应
+message LogSearchQueryResponse {
+  bool success = 1;   // 是否成功
+  string log_id = 2;  // 日志ID
+}
+
+// 搜索日志项
+message SearchLogItem {
+  string id = 1;          // 记录ID
+  string user_id = 2;     // 用户ID
+  string keyword = 3;     // 搜索关键词
+  string category = 4;    // 分类
+  repeated string tags = 5; // 标签
+  string location = 6;    // 位置
+  int32 result_num = 7;   // 结果数量
+  string created_at = 8;  // 创建时间
+  string ip = 9;          // IP地址
+  string device_id = 10;  // 设备ID
+}
+
+// 获取搜索日志请求
+message GetSearchLogsRequest {
+  string user_id = 1;     // 用户ID
+  string start_time = 2;  // 开始时间
+  string end_time = 3;    // 结束时间
+  int32 page = 4;         // 页码
+  int32 page_size = 5;    // 每页数量
+}
+
+// 获取搜索日志响应
+message GetSearchLogsResponse {
+  int32 total = 1;                      // 总数
+  int32 page = 2;                       // 当前页
+  int32 page_size = 3;                  // 每页数量
+  repeated SearchLogItem search_logs = 4; // 搜索记录
+}

@@ -1,0 +1,347 @@
+syntax = "v1"
+
+info (
+	title:   "交易服务API"
+	desc:    "交易服务提供支付管理、订单处理、交易记录、退款管理和财务报表功能"
+	author:  "wz-backend-go"
+	version: "1.0"
+)
+
+type (
+	// 订单创建请求
+	CreateOrderReq {
+		UserId      int64   `json:"user_id"`                   // 用户ID
+		ProductId   int64   `json:"product_id"`                // 产品ID
+		ProductType string  `json:"product_type"`              // 产品类型
+		Quantity    int32   `json:"quantity"`                  // 数量
+		Amount      float64 `json:"amount"`                    // 金额
+		Currency    string  `json:"currency,default=CNY"`      // 货币类型
+		Description string  `json:"description,optional"`      // 描述
+		Metadata    string  `json:"metadata,optional"`         // 元数据，JSON格式
+	}
+
+	// 订单创建响应
+	CreateOrderResp {
+		OrderId    string  `json:"order_id"`                  // 订单ID
+		Amount     float64 `json:"amount"`                    // 金额
+		Currency   string  `json:"currency"`                  // 货币类型
+		Status     string  `json:"status"`                    // 订单状态
+		CreatedAt  string  `json:"created_at"`                // 创建时间
+		ExpireTime string  `json:"expire_time"`               // 过期时间
+		PaymentUrl string  `json:"payment_url,optional"`      // 支付链接
+	}
+
+	// 订单详情请求
+	GetOrderReq {
+		OrderId string `path:"order_id"` // 订单ID
+	}
+
+	// 订单详情
+	OrderDetail {
+		OrderId     string  `json:"order_id"`                 // 订单ID
+		UserId      int64   `json:"user_id"`                  // 用户ID
+		ProductId   int64   `json:"product_id"`               // 产品ID
+		ProductType string  `json:"product_type"`             // 产品类型
+		Quantity    int32   `json:"quantity"`                 // 数量
+		Amount      float64 `json:"amount"`                   // 金额
+		Currency    string  `json:"currency"`                 // 货币类型
+		Status      string  `json:"status"`                   // 订单状态：待支付、已支付、已取消、已退款
+		PaymentId   string  `json:"payment_id,optional"`      // 支付ID
+		PaymentType string  `json:"payment_type,optional"`    // 支付类型
+		PaymentTime string  `json:"payment_time,optional"`    // 支付时间
+		Description string  `json:"description,optional"`     // 描述
+		Metadata    string  `json:"metadata,optional"`        // 元数据，JSON格式
+		CreatedAt   string  `json:"created_at"`               // 创建时间
+		UpdatedAt   string  `json:"updated_at"`               // 更新时间
+		ExpireTime  string  `json:"expire_time"`              // 过期时间
+	}
+
+	// 订单详情响应
+	GetOrderResp {
+		Order OrderDetail `json:"order"` // 订单详情
+	}
+
+	// 取消订单请求
+	CancelOrderReq {
+		OrderId  string `path:"order_id"`                   // 订单ID
+		Reason   string `json:"reason,optional"`            // 取消原因
+	}
+
+	// 取消订单响应
+	CancelOrderResp {
+		Success bool   `json:"success"`                     // 是否成功
+		OrderId string `json:"order_id"`                    // 订单ID
+		Status  string `json:"status"`                      // 订单状态
+		Message string `json:"message,optional"`            // 消息
+	}
+
+	// 订单列表请求
+	ListOrdersReq {
+		UserId     int64  `form:"user_id,optional"`             // 用户ID
+		Status     string `form:"status,optional"`              // 订单状态
+		StartTime  string `form:"start_time,optional"`          // 开始时间
+		EndTime    string `form:"end_time,optional"`            // 结束时间
+		ProductType string `form:"product_type,optional"`       // 产品类型
+		Page       int32  `form:"page,optional,default=1"`      // 页码
+		PageSize   int32  `form:"page_size,optional,default=10"` // 每页数量
+	}
+
+	// 订单列表响应
+	ListOrdersResp {
+		Total  int32         `json:"total"`                    // 总数
+		Page   int32         `json:"page"`                     // 当前页
+		Size   int32         `json:"size"`                     // 每页数量
+		Orders []OrderDetail `json:"orders"`                   // 订单列表
+	}
+
+	// 支付回调请求
+	PaymentCallbackReq {
+		PaymentId   string  `json:"payment_id"`                // 支付ID
+		OrderId     string  `json:"order_id"`                  // 订单ID
+		Amount      float64 `json:"amount"`                    // 金额
+		Currency    string  `json:"currency"`                  // 货币类型
+		Status      string  `json:"status"`                    // 支付状态
+		PaymentType string  `json:"payment_type"`              // 支付类型
+		PaymentTime string  `json:"payment_time"`              // 支付时间
+		Signature   string  `json:"signature"`                 // 签名
+		RawData     string  `json:"raw_data,optional"`         // 原始数据
+	}
+
+	// 支付回调响应
+	PaymentCallbackResp {
+		Success bool   `json:"success"`                        // 是否成功
+		Message string `json:"message,optional"`               // 消息
+	}
+
+	// 创建退款请求
+	CreateRefundReq {
+		OrderId     string  `json:"order_id"`                  // 订单ID
+		Amount      float64 `json:"amount"`                    // 退款金额
+		Reason      string  `json:"reason"`                    // 退款原因
+		Description string  `json:"description,optional"`      // 描述
+	}
+
+	// 创建退款响应
+	CreateRefundResp {
+		RefundId   string  `json:"refund_id"`                 // 退款ID
+		OrderId    string  `json:"order_id"`                  // 订单ID
+		Amount     float64 `json:"amount"`                    // 退款金额
+		Status     string  `json:"status"`                    // 退款状态
+		CreatedAt  string  `json:"created_at"`                // 创建时间
+	}
+
+	// 退款详情请求
+	GetRefundReq {
+		RefundId string `path:"refund_id"` // 退款ID
+	}
+
+	// 退款详情
+	RefundDetail {
+		RefundId    string  `json:"refund_id"`                // 退款ID
+		OrderId     string  `json:"order_id"`                 // 订单ID
+		UserId      int64   `json:"user_id"`                  // 用户ID
+		Amount      float64 `json:"amount"`                   // 退款金额
+		Currency    string  `json:"currency"`                 // 货币类型
+		Status      string  `json:"status"`                   // 退款状态
+		Reason      string  `json:"reason"`                   // 退款原因
+		Description string  `json:"description,optional"`     // 描述
+		ProcessedBy string  `json:"processed_by,optional"`    // 处理人
+		ProcessTime string  `json:"process_time,optional"`    // 处理时间
+		CreatedAt   string  `json:"created_at"`               // 创建时间
+		UpdatedAt   string  `json:"updated_at"`               // 更新时间
+	}
+
+	// 退款详情响应
+	GetRefundResp {
+		Refund RefundDetail `json:"refund"` // 退款详情
+	}
+
+	// 退款列表请求
+	ListRefundsReq {
+		UserId     int64  `form:"user_id,optional"`             // 用户ID
+		OrderId    string `form:"order_id,optional"`            // 订单ID
+		Status     string `form:"status,optional"`              // 退款状态
+		StartTime  string `form:"start_time,optional"`          // 开始时间
+		EndTime    string `form:"end_time,optional"`            // 结束时间
+		Page       int32  `form:"page,optional,default=1"`      // 页码
+		PageSize   int32  `form:"page_size,optional,default=10"` // 每页数量
+	}
+
+	// 退款列表响应
+	ListRefundsResp {
+		Total   int32          `json:"total"`                   // 总数
+		Page    int32          `json:"page"`                    // 当前页
+		Size    int32          `json:"size"`                    // 每页数量
+		Refunds []RefundDetail `json:"refunds"`                 // 退款列表
+	}
+
+	// 处理退款请求
+	ProcessRefundReq {
+		RefundId    string `json:"refund_id"`                  // 退款ID
+		Action      string `json:"action"`                     // 操作：approve, reject
+		Comment     string `json:"comment,optional"`           // 备注
+		ProcessedBy string `json:"processed_by"`               // 处理人
+	}
+
+	// 处理退款响应
+	ProcessRefundResp {
+		Success  bool   `json:"success"`                       // 是否成功
+		RefundId string `json:"refund_id"`                     // 退款ID
+		Status   string `json:"status"`                        // 退款状态
+		Message  string `json:"message,optional"`              // 消息
+	}
+
+	// 账户余额项
+	BalanceItem {
+		Currency  string  `json:"currency"`                    // 货币类型
+		Available float64 `json:"available"`                   // 可用余额
+		Pending   float64 `json:"pending"`                     // 待结算余额
+		Frozen    float64 `json:"frozen"`                      // 冻结余额
+	}
+
+	// 账户余额请求
+	GetBalanceReq {
+		UserId int64 `path:"user_id"` // 用户ID
+	}
+
+	// 账户余额响应
+	GetBalanceResp {
+		UserId    int64         `json:"user_id"`               // 用户ID
+		Balances  []BalanceItem `json:"balances"`              // 余额列表
+		UpdatedAt string        `json:"updated_at"`            // 更新时间
+	}
+
+	// 交易记录项
+	TransactionItem {
+		TransactionId string  `json:"transaction_id"`           // 交易ID
+		UserId        int64   `json:"user_id"`                  // 用户ID
+		RelatedId     string  `json:"related_id"`               // 关联ID（订单ID或退款ID）
+		Type          string  `json:"type"`                     // 交易类型：payment, refund, withdraw, adjustment
+		Amount        float64 `json:"amount"`                   // 金额
+		Currency      string  `json:"currency"`                 // 货币类型
+		Status        string  `json:"status"`                   // 交易状态
+		Description   string  `json:"description,optional"`     // 描述
+		Metadata      string  `json:"metadata,optional"`        // 元数据，JSON格式
+		CreatedAt     string  `json:"created_at"`               // 创建时间
+	}
+
+	// 交易记录请求
+	GetTransactionsReq {
+		UserId     int64  `form:"user_id,optional"`             // 用户ID
+		Type       string `form:"type,optional"`                // 交易类型
+		Status     string `form:"status,optional"`              // 交易状态
+		StartTime  string `form:"start_time,optional"`          // 开始时间
+		EndTime    string `form:"end_time,optional"`            // 结束时间
+		Page       int32  `form:"page,optional,default=1"`      // 页码
+		PageSize   int32  `form:"page_size,optional,default=10"` // 每页数量
+	}
+
+	// 交易记录响应
+	GetTransactionsResp {
+		Total        int32             `json:"total"`            // 总数
+		Page         int32             `json:"page"`             // 当前页
+		Size         int32             `json:"size"`             // 每页数量
+		Transactions []TransactionItem `json:"transactions"`     // 交易记录
+	}
+
+	// 财务报表请求
+	GetFinancialReportReq {
+		StartTime string `form:"start_time"`                    // 开始时间
+		EndTime   string `form:"end_time"`                      // 结束时间
+		Type      string `form:"type,optional,default=daily"`   // 报表类型：daily, weekly, monthly
+		Currency  string `form:"currency,optional,default=CNY"` // 货币类型
+	}
+
+	// 报表数据点
+	ReportDataPoint {
+		Date      string  `json:"date"`                        // 日期
+		Income    float64 `json:"income"`                      // 收入
+		Refund    float64 `json:"refund"`                      // 退款
+		Net       float64 `json:"net"`                         // 净收入
+		OrderCount int32  `json:"order_count"`                 // 订单数
+		UserCount  int32  `json:"user_count"`                  // 用户数
+	}
+
+	// 财务报表响应
+	GetFinancialReportResp {
+		StartTime    string            `json:"start_time"`       // 开始时间
+		EndTime      string            `json:"end_time"`         // 结束时间
+		Currency     string            `json:"currency"`         // 货币类型
+		TotalIncome  float64           `json:"total_income"`     // 总收入
+		TotalRefund  float64           `json:"total_refund"`     // 总退款
+		TotalNet     float64           `json:"total_net"`        // 总净收入
+		OrderCount   int32             `json:"order_count"`      // 订单数
+		UserCount    int32             `json:"user_count"`       // 用户数
+		DataPoints   []ReportDataPoint `json:"data_points"`      // 数据点
+	}
+)
+
+// 订单相关接口
+@server (
+	jwt:   Auth
+	group: orders
+)
+service Trade {
+	@handler CreateOrder
+	post /api/v1/orders (CreateOrderReq) returns (CreateOrderResp)
+
+	@handler GetOrder
+	get /api/v1/orders/:order_id (GetOrderReq) returns (GetOrderResp)
+
+	@handler CancelOrder
+	post /api/v1/orders/:order_id/cancel (CancelOrderReq) returns (CancelOrderResp)
+
+	@handler ListOrders
+	get /api/v1/orders (ListOrdersReq) returns (ListOrdersResp)
+}
+
+// 支付相关接口
+@server (
+	group: payments
+)
+service Trade {
+	@handler PaymentCallback
+	post /api/v1/payments/callback (PaymentCallbackReq) returns (PaymentCallbackResp)
+}
+
+// 退款相关接口
+@server (
+	jwt:   Auth
+	group: refunds
+)
+service Trade {
+	@handler CreateRefund
+	post /api/v1/refunds (CreateRefundReq) returns (CreateRefundResp)
+
+	@handler GetRefund
+	get /api/v1/refunds/:refund_id (GetRefundReq) returns (GetRefundResp)
+
+	@handler ListRefunds
+	get /api/v1/refunds (ListRefundsReq) returns (ListRefundsResp)
+}
+
+// 管理员接口
+@server (
+	jwt:   Auth
+	group: admin
+)
+service Trade {
+	@handler ProcessRefund
+	post /api/v1/admin/refunds/process (ProcessRefundReq) returns (ProcessRefundResp)
+
+	@handler GetFinancialReport
+	get /api/v1/admin/reports/financial (GetFinancialReportReq) returns (GetFinancialReportResp)
+}
+
+// 账户相关接口
+@server (
+	jwt:   Auth
+	group: accounts
+)
+service Trade {
+	@handler GetBalance
+	get /api/v1/accounts/:user_id/balance (GetBalanceReq) returns (GetBalanceResp)
+
+	@handler GetTransactions
+	get /api/v1/accounts/transactions (GetTransactionsReq) returns (GetTransactionsResp)
+}

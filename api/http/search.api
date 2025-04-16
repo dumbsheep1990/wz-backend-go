@@ -1,0 +1,170 @@
+syntax = "v1"
+
+info (
+	title:   "搜索服务API"
+	desc:    "搜索服务提供全文搜索、分类筛选、地理位置搜索、搜索推荐及热搜管理功能"
+	author:  "wz-backend-go"
+	version: "1.0"
+)
+
+type (
+	// 搜索请求
+	SearchReq {
+		Keyword     string  `form:"keyword"`                       // 搜索关键词
+		Category    string  `form:"category,optional"`             // 分类
+		Tags        string  `form:"tags,optional"`                 // 标签，逗号分隔
+		Longitude   float64 `form:"longitude,optional"`            // 经度
+		Latitude    float64 `form:"latitude,optional"`             // 纬度
+		Distance    int     `form:"distance,optional,default=5"`   // 距离，默认5km
+		Page        int     `form:"page,optional,default=1"`       // 页码
+		PageSize    int     `form:"page_size,optional,default=10"` // 每页数量
+		SortBy      string  `form:"sort_by,optional,default=rel"`  // 排序方式：rel(相关度)、time(时间)、pop(热度)
+		TimeRange   string  `form:"time_range,optional"`           // 时间范围：day、week、month、year
+	}
+
+	// 搜索结果项
+	SearchResultItem {
+		ID          string   `json:"id"`           // 结果ID
+		Title       string   `json:"title"`        // 标题
+		Content     string   `json:"content"`      // 内容摘要
+		Category    string   `json:"category"`     // 分类
+		Tags        []string `json:"tags"`         // 标签
+		Author      string   `json:"author"`       // 作者
+		AuthorID    string   `json:"author_id"`    // 作者ID
+		CreatedAt   string   `json:"created_at"`   // 创建时间
+		UpdatedAt   string   `json:"updated_at"`   // 更新时间
+		ViewCount   int      `json:"view_count"`   // 浏览数
+		LikeCount   int      `json:"like_count"`   // 点赞数
+		Distance    float64  `json:"distance"`     // 距离，单位km
+		Score       float64  `json:"score"`        // 相关度得分
+		Highlights  []string `json:"highlights"`   // 高亮内容
+		ResourceURL string   `json:"resource_url"` // 资源URL
+		ResourceType string  `json:"resource_type"` // 资源类型：post、review等
+	}
+
+	// 搜索响应
+	SearchResp {
+		Total    int                `json:"total"`     // 总数
+		Page     int                `json:"page"`      // 当前页
+		PageSize int                `json:"page_size"` // 每页数量
+		Results  []SearchResultItem `json:"results"`   // 搜索结果
+		TimeCost int                `json:"time_cost"` // 搜索耗时(ms)
+	}
+
+	// 搜索建议请求
+	SuggestReq {
+		Keyword  string `form:"keyword"`                     // 输入关键词
+		Limit    int    `form:"limit,optional,default=10"`   // 返回数量限制
+		Category string `form:"category,optional"`           // 分类限制
+	}
+
+	// 搜索建议响应
+	SuggestResp {
+		Suggestions []string `json:"suggestions"` // 建议列表
+	}
+
+	// 热搜词请求
+	HotSearchReq {
+		Category string `form:"category,optional"`           // 分类
+		Limit    int    `form:"limit,optional,default=20"`   // 数量限制
+	}
+
+	// 热搜词项
+	HotSearchItem {
+		Keyword    string `json:"keyword"`     // 关键词
+		Count      int    `json:"count"`       // 搜索次数
+		Trend      int    `json:"trend"`       // 趋势：1上升，0持平，-1下降
+		IsPromoted bool   `json:"is_promoted"` // 是否是推广热搜
+	}
+
+	// 热搜词响应
+	HotSearchResp {
+		HotSearches []HotSearchItem `json:"hot_searches"` // 热搜列表
+		UpdatedAt   string          `json:"updated_at"`   // 更新时间
+	}
+
+	// 添加热搜请求
+	AddHotSearchReq {
+		Keyword    string `json:"keyword"`     // 关键词
+		Category   string `json:"category"`    // 分类
+		IsPromoted bool   `json:"is_promoted"` // 是否推广
+		SortOrder  int    `json:"sort_order"`  // 排序
+	}
+
+	// 添加热搜响应
+	AddHotSearchResp {
+		Success bool   `json:"success"` // 是否成功
+		Message string `json:"message"` // 消息
+	}
+
+	// 删除热搜请求
+	DeleteHotSearchReq {
+		ID string `path:"id"` // 热搜ID
+	}
+
+	// 删除热搜响应
+	DeleteHotSearchResp {
+		Success bool   `json:"success"` // 是否成功
+		Message string `json:"message"` // 消息
+	}
+
+	// 搜索记录项
+	SearchLogItem {
+		ID        string   `json:"id"`         // 记录ID
+		UserID    string   `json:"user_id"`    // 用户ID
+		Keyword   string   `json:"keyword"`    // 搜索关键词
+		Category  string   `json:"category"`   // 分类
+		Tags      []string `json:"tags"`       // 标签
+		Location  string   `json:"location"`   // 位置
+		ResultNum int      `json:"result_num"` // 结果数量
+		CreatedAt string   `json:"created_at"` // 创建时间
+		IP        string   `json:"ip"`         // IP地址
+		DeviceID  string   `json:"device_id"`  // 设备ID
+	}
+
+	// 获取搜索记录请求
+	GetSearchLogsReq {
+		UserID    string `form:"user_id,optional"`           // 用户ID
+		StartTime string `form:"start_time,optional"`        // 开始时间
+		EndTime   string `form:"end_time,optional"`          // 结束时间
+		Page      int    `form:"page,optional,default=1"`    // 页码
+		PageSize  int    `form:"page_size,optional,default=20"` // 每页数量
+	}
+
+	// 获取搜索记录响应
+	GetSearchLogsResp {
+		Total      int             `json:"total"`       // 总数
+		Page       int             `json:"page"`        // 当前页
+		PageSize   int             `json:"page_size"`   // 每页数量
+		SearchLogs []SearchLogItem `json:"search_logs"` // 搜索记录
+	}
+)
+
+@server (
+	group: search
+)
+service Search {
+	@handler Search
+	get /api/v1/search (SearchReq) returns (SearchResp)
+
+	@handler Suggest
+	get /api/v1/suggest (SuggestReq) returns (SuggestResp)
+
+	@handler GetHotSearches
+	get /api/v1/hot (HotSearchReq) returns (HotSearchResp)
+}
+
+@server (
+	jwt:   Auth
+	group: search_admin
+)
+service Search {
+	@handler AddHotSearch
+	post /api/v1/hot (AddHotSearchReq) returns (AddHotSearchResp)
+
+	@handler DeleteHotSearch
+	delete /api/v1/hot/:id (DeleteHotSearchReq) returns (DeleteHotSearchResp)
+
+	@handler GetSearchLogs
+	get /api/v1/search/logs (GetSearchLogsReq) returns (GetSearchLogsResp)
+}
