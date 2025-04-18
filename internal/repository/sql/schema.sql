@@ -40,10 +40,24 @@ CREATE TABLE IF NOT EXISTS user_details (
 CREATE TABLE IF NOT EXISTS company_verifications (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     user_id BIGINT NOT NULL,
+    company_type TINYINT NOT NULL COMMENT '1: 企业, 2: 集团, 3: 政府机构, 4: 上市公司',
     company_name VARCHAR(100) NOT NULL,
-    business_license VARCHAR(100) NOT NULL,
+    -- 通用字段
+    business_license VARCHAR(255) COMMENT '营业执照，企业、集团、上市公司需要',
+    committee_letter VARCHAR(255) COMMENT '委托书，所有类型可选',
+    -- 企业特定字段
+    org_code_cert VARCHAR(255) COMMENT '组织机构代码证，企业类型需要',
+    agency_cert VARCHAR(255) COMMENT '代理机构证明，企业类型可选',
+    -- 集团特定字段
+    org_structure VARCHAR(255) COMMENT '组织架构说明，集团类型需要',
+    -- 政府机构特定字段
+    unified_social_credit VARCHAR(255) COMMENT '统一社会信用代码证，政府机构类型需要',
+    -- 上市公司特定字段
+    listing_cert VARCHAR(255) COMMENT '上市证明，上市公司类型需要',
+    -- 其他通用字段
     contact_person VARCHAR(50) NOT NULL,
     contact_phone VARCHAR(20) NOT NULL,
+    uploaded_document TEXT COMMENT '上传的机构设立文本，适用于所有类型',
     status TINYINT NOT NULL DEFAULT 0 COMMENT '0: 待审核, 1: 已通过, 2: 已拒绝',
     remark VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -63,6 +77,27 @@ CREATE TABLE IF NOT EXISTS user_login_logs (
     login_status TINYINT NOT NULL COMMENT '1: 成功, 0: 失败',
     INDEX idx_user_login_logs_user_id (user_id),
     CONSTRAINT fk_user_login_logs_user_id FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 企业入驻表
+CREATE TABLE IF NOT EXISTS enterprise_registrations (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    company_name VARCHAR(100) NOT NULL,
+    company_type TINYINT NOT NULL COMMENT '1: 企业, 2: 集团, 3: 政府机构/NGO/协会, 4: 科研所',
+    contact_person VARCHAR(50) NOT NULL,
+    job_position VARCHAR(50) NOT NULL,
+    region VARCHAR(100) NOT NULL,
+    verification_method VARCHAR(50) NOT NULL,
+    detailed_address VARCHAR(255) NOT NULL,
+    location_latitude DECIMAL(10, 7),
+    location_longitude DECIMAL(10, 7),
+    status TINYINT NOT NULL DEFAULT 0 COMMENT '0: 待审核, 1: 已通过, 2: 已拒绝',
+    remark VARCHAR(255),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_user_id (user_id),
+    CONSTRAINT fk_enterprise_registrations_user_id FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 分类表

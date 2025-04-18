@@ -68,14 +68,54 @@ type UserInfo struct {
 	UpdatedAt         string `json:"updated_at"`
 }
 
+// CompanyType represents the type of company for verification
+type CompanyType int32
+
+const (
+	CompanyTypeEnterprise    CompanyType = 1 // 企业
+	CompanyTypeGroup         CompanyType = 2 // 集团
+	CompanyTypeGovernment    CompanyType = 3 // 政府机构/NGO/协会
+	CompanyTypeResearchInst  CompanyType = 4 // 科研所
+)
+
 type VerifyCompanyReq struct {
-	CompanyName     string `json:"company_name" validate:"required"`
-	BusinessLicense string `json:"business_license" validate:"required"`
-	ContactPerson   string `json:"contact_person" validate:"required"`
-	ContactPhone    string `json:"contact_phone" validate:"required"`
+	CompanyType     CompanyType `json:"company_type" validate:"required"`
+	CompanyName     string      `json:"company_name" validate:"required"`
+	// 通用字段
+	BusinessLicense string      `json:"business_license"`
+	CommitteeLetter string      `json:"committee_letter"`
+	// 企业特定字段
+	OrgCodeCert     string      `json:"org_code_cert"`
+	AgencyCert      string      `json:"agency_cert"`
+	// 集团特定字段
+	OrgStructure    string      `json:"org_structure"`
+	// 政府机构/NGO/协会特定字段
+	UnifiedSocialCredit string  `json:"unified_social_credit"`
+	// 科研所特定字段
+	ResearchCert    string      `json:"research_cert"`
+	// 其他通用字段
+	ContactPerson   string      `json:"contact_person" validate:"required"`
+	ContactPhone    string      `json:"contact_phone" validate:"required"`
+	UploadedDocument string     `json:"uploaded_document"`
 }
 
 type VerifyCompanyResp struct {
+	Success bool `json:"success"`
+}
+
+type EnterpriseRegistrationReq struct {
+	CompanyName      string      `json:"company_name" validate:"required"`
+	CompanyType      CompanyType `json:"company_type" validate:"required"`
+	ContactPerson    string      `json:"contact_person" validate:"required"`
+	JobPosition      string      `json:"job_position" validate:"required"`
+	Region           string      `json:"region" validate:"required"`
+	VerificationMethod string    `json:"verification_method" validate:"required"`
+	DetailedAddress  string      `json:"detailed_address" validate:"required"`
+	LocationLatitude float64     `json:"location_latitude"`
+	LocationLongitude float64    `json:"location_longitude"`
+}
+
+type EnterpriseRegistrationResp struct {
 	Success bool `json:"success"`
 }
 

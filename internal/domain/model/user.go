@@ -32,18 +32,42 @@ type UserDetail struct {
 	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
 }
 
+// CompanyType 企业类型
+type CompanyType int32
+
+const (
+	CompanyTypeEnterprise    CompanyType = 1 // 企业
+	CompanyTypeGroup         CompanyType = 2 // 集团
+	CompanyTypeGovernment    CompanyType = 3 // 政府机构/NGO/协会
+	CompanyTypeResearchInst  CompanyType = 4 // 科研所
+)
+
 // CompanyVerification 企业认证请求
 type CompanyVerification struct {
-	ID            int64     `db:"id" json:"id"`
-	UserID        int64     `db:"user_id" json:"user_id"`
-	CompanyName   string    `db:"company_name" json:"company_name"`
-	BusinessLicense string  `db:"business_license" json:"business_license"`
-	ContactPerson string    `db:"contact_person" json:"contact_person"`
-	ContactPhone  string    `db:"contact_phone" json:"contact_phone"`
-	Status        int32     `db:"status" json:"status"`
-	Remark        string    `db:"remark" json:"remark"`
-	CreatedAt     time.Time `db:"created_at" json:"created_at"`
-	UpdatedAt     time.Time `db:"updated_at" json:"updated_at"`
+	ID            int64       `db:"id" json:"id"`
+	UserID        int64       `db:"user_id" json:"user_id"`
+	CompanyType   CompanyType `db:"company_type" json:"company_type"`
+	CompanyName   string      `db:"company_name" json:"company_name"`
+	// 通用字段
+	BusinessLicense string     `db:"business_license" json:"business_license"`
+	CommitteeLetter string     `db:"committee_letter" json:"committee_letter"`
+	// 企业特定字段
+	OrgCodeCert string         `db:"org_code_cert" json:"org_code_cert"`
+	AgencyCert string          `db:"agency_cert" json:"agency_cert"`
+	// 集团特定字段
+	OrgStructure string        `db:"org_structure" json:"org_structure"`
+	// 政府机构特定字段
+	UnifiedSocialCredit string `db:"unified_social_credit" json:"unified_social_credit"`
+	// 上市公司特定字段
+	ListingCert string         `db:"listing_cert" json:"listing_cert"`
+	// 其他通用字段
+	ContactPerson string       `db:"contact_person" json:"contact_person"`
+	ContactPhone string        `db:"contact_phone" json:"contact_phone"`
+	UploadedDocument string    `db:"uploaded_document" json:"uploaded_document"`
+	Status        int32        `db:"status" json:"status"`
+	Remark        string       `db:"remark" json:"remark"`
+	CreatedAt     time.Time    `db:"created_at" json:"created_at"`
+	UpdatedAt     time.Time    `db:"updated_at" json:"updated_at"`
 }
 
 // UserLoginLog 用户登录日志条目
@@ -98,11 +122,58 @@ type VerifyUserRequest struct {
 	VerificationCode string `json:"verification_code" validate:"required"`
 }
 
+// EnterpriseRegistration 企业入驻信息
+type EnterpriseRegistration struct {
+	ID               int64       `db:"id" json:"id"`
+	UserID           int64       `db:"user_id" json:"user_id"`
+	CompanyName      string      `db:"company_name" json:"company_name"`
+	CompanyType      CompanyType `db:"company_type" json:"company_type"`
+	ContactPerson    string      `db:"contact_person" json:"contact_person"`
+	JobPosition      string      `db:"job_position" json:"job_position"`
+	Region           string      `db:"region" json:"region"`
+	VerificationMethod string    `db:"verification_method" json:"verification_method"`
+	DetailedAddress  string      `db:"detailed_address" json:"detailed_address"`
+	LocationLatitude float64     `db:"location_latitude" json:"location_latitude"`
+	LocationLongitude float64    `db:"location_longitude" json:"location_longitude"`
+	Status           int32       `db:"status" json:"status"`
+	Remark           string      `db:"remark" json:"remark"`
+	CreatedAt        time.Time   `db:"created_at" json:"created_at"`
+	UpdatedAt        time.Time   `db:"updated_at" json:"updated_at"`
+}
+
+// EnterpriseRegistrationRequest 企业入驻请求
+type EnterpriseRegistrationRequest struct {
+	UserID           int64       `json:"-"`
+	CompanyName      string      `json:"company_name" validate:"required"`
+	CompanyType      CompanyType `json:"company_type" validate:"required"`
+	ContactPerson    string      `json:"contact_person" validate:"required"`
+	JobPosition      string      `json:"job_position" validate:"required"`
+	Region           string      `json:"region" validate:"required"`
+	VerificationMethod string    `json:"verification_method" validate:"required"`
+	DetailedAddress  string      `json:"detailed_address" validate:"required"`
+	LocationLatitude float64     `json:"location_latitude"`
+	LocationLongitude float64    `json:"location_longitude"`
+}
+
 // VerifyCompanyRequest 验证企业请求
 type VerifyCompanyRequest struct {
-	UserID          int64  `json:"-"`
-	CompanyName     string `json:"company_name" validate:"required"`
-	BusinessLicense string `json:"business_license" validate:"required"`
-	ContactPerson   string `json:"contact_person" validate:"required"`
-	ContactPhone    string `json:"contact_phone" validate:"required"`
+	UserID          int64       `json:"-"`
+	CompanyType     CompanyType `json:"company_type" validate:"required"`
+	CompanyName     string      `json:"company_name" validate:"required"`
+	// 通用字段
+	BusinessLicense string      `json:"business_license"`
+	CommitteeLetter string      `json:"committee_letter"`
+	// 企业特定字段
+	OrgCodeCert     string      `json:"org_code_cert"`
+	AgencyCert      string      `json:"agency_cert"`
+	// 集团特定字段
+	OrgStructure    string      `json:"org_structure"`
+	// 政府机构特定字段
+	UnifiedSocialCredit string  `json:"unified_social_credit"`
+	// 科研所特定字段
+	ResearchCert     string      `json:"research_cert"`
+	// 其他通用字段
+	ContactPerson   string      `json:"contact_person" validate:"required"`
+	ContactPhone    string      `json:"contact_phone" validate:"required"`
+	UploadedDocument string     `json:"uploaded_document"`
 }
