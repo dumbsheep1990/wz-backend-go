@@ -4,6 +4,16 @@ import (
 	"time"
 )
 
+// UserRole 用户角色
+type UserRole string
+
+const (
+	RolePlatformAdmin UserRole = "platform_admin" // 平台管理员
+	RoleTenantAdmin  UserRole = "tenant_admin"   // 租户管理员
+	RoleTenantUser   UserRole = "tenant_user"    // 租户普通用户
+	RolePersonalUser UserRole = "personal_user"  // 个人用户
+)
+
 // User 系统用户
 type User struct {
 	ID                int64     `db:"id" json:"id"`
@@ -14,6 +24,8 @@ type User struct {
 	Status            int32     `db:"status" json:"status"`
 	IsVerified        bool      `db:"is_verified" json:"is_verified"`
 	IsCompanyVerified bool      `db:"is_company_verified" json:"is_company_verified"`
+	DefaultTenantID   int64     `db:"default_tenant_id" json:"default_tenant_id"` // 默认租户ID
+	Role              UserRole  `db:"role" json:"role"`                          // 用户角色
 	CreatedAt         time.Time `db:"created_at" json:"created_at"`
 	UpdatedAt         time.Time `db:"updated_at" json:"updated_at"`
 }
@@ -105,6 +117,7 @@ type RegisterRequest struct {
 type LoginRequest struct {
 	Username string `json:"username" validate:"required"`
 	Password string `json:"password" validate:"required"`
+	TenantID int64  `json:"tenant_id,omitempty"` // 可选的租户ID，如果是租户用户登录需要指定
 }
 
 // UpdateUserRequest 更新用户信息的请求
@@ -153,6 +166,11 @@ type EnterpriseRegistrationRequest struct {
 	DetailedAddress  string      `json:"detailed_address" validate:"required"`
 	LocationLatitude float64     `json:"location_latitude"`
 	LocationLongitude float64    `json:"location_longitude"`
+	// 租户相关信息，用于同时创建租户
+	Subdomain       string      `json:"subdomain" validate:"required,alphanum"`
+	TenantType      TenantType  `json:"tenant_type" validate:"required"`
+	TenantName      string      `json:"tenant_name" validate:"required"`
+	TenantDesc      string      `json:"tenant_description"`
 }
 
 // VerifyCompanyRequest 验证企业请求
