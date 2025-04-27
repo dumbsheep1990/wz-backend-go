@@ -1,0 +1,89 @@
+syntax = "v1"
+
+info(
+    title: "AI服务API"
+    desc: "处理AI相关功能的API"
+    author: "wz-backend-go"
+    version: "v1"
+)
+
+type (
+    // 推荐请求
+    RecommendRequest {
+        UserId    int64  `json:"userId,optional"`    // 用户ID，可选
+        Scene     string `json:"scene"`              // 推荐场景：home/related
+        PageSize  int    `json:"pageSize,optional"`  // 每页数量，可选
+        PageToken string `json:"pageToken,optional"` // 分页token，可选
+    }
+
+    // 推荐响应
+    RecommendResponse {
+        Code int    `json:"code"`
+        Msg  string `json:"msg"`
+        Data struct {
+            Items      []RecommendItem `json:"items"`
+            PageToken  string          `json:"pageToken"`
+            HasMore    bool            `json:"hasMore"`
+        } `json:"data"`
+    }
+
+    // 推荐项
+    RecommendItem {
+        Id          int64  `json:"id"`
+        Type        string `json:"type"`        // 内容类型：post/article
+        Title       string `json:"title"`
+        Description string `json:"description"`
+        Score       float64 `json:"score"`      // 推荐分数
+    }
+
+    // 内容审核请求
+    ContentReviewRequest {
+        Content string `json:"content"` // 待审核内容
+        Type    string `json:"type"`    // 内容类型：text/image
+    }
+
+    // 内容审核响应
+    ContentReviewResponse {
+        Code int    `json:"code"`
+        Msg  string `json:"msg"`
+        Data struct {
+            Passed    bool     `json:"passed"`    // 是否通过
+            Reason    string   `json:"reason"`    // 原因
+            Labels    []string `json:"labels"`    // 标签
+            Confidence float64  `json:"confidence"` // 置信度
+        } `json:"data"`
+    }
+
+    // 客服对话请求
+    ChatRequest {
+        UserId  int64  `json:"userId"`
+        Message string `json:"message"`
+    }
+
+    // 客服对话响应
+    ChatResponse {
+        Code int    `json:"code"`
+        Msg  string `json:"msg"`
+        Data struct {
+            Message string `json:"message"`
+        } `json:"data"`
+    }
+)
+
+@server(
+    group: ai
+    prefix: /api/v1/ai
+)
+service ai-api {
+    @doc "获取推荐内容"
+    @handler Recommend
+    post /recommend (RecommendRequest) returns (RecommendResponse)
+
+    @doc "内容审核"
+    @handler ContentReview
+    post /review (ContentReviewRequest) returns (ContentReviewResponse)
+
+    @doc "客服对话"
+    @handler Chat
+    post /chat (ChatRequest) returns (ChatResponse)
+} 

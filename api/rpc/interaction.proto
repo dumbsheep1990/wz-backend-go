@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+package interaction;
+
+option go_package = "./interaction";
+
+// 交互服务
+service Interaction {
+  // 点赞
+  rpc Like(LikeRequest) returns (LikeResponse);
+  // 取消点赞
+  rpc Unlike(LikeRequest) returns (LikeResponse);
+  // 发表评论
+  rpc Comment(CommentRequest) returns (CommentResponse);
+  // 删除评论
+  rpc DeleteComment(DeleteCommentRequest) returns (CommentResponse);
+  // 关注
+  rpc Follow(FollowRequest) returns (FollowResponse);
+  // 取消关注
+  rpc Unfollow(FollowRequest) returns (FollowResponse);
+  // 举报
+  rpc Report(ReportRequest) returns (ReportResponse);
+}
+
+// 点赞请求
+message LikeRequest {
+  int64 userId = 1;
+  string targetType = 2;
+  int64 targetId = 3;
+}
+
+// 点赞响应
+message LikeResponse {
+  int64 code = 1;
+  string msg = 2;
+}
+
+// 评论请求
+message CommentRequest {
+  int64 userId = 1;
+  string targetType = 2;
+  int64 targetId = 3;
+  string content = 4;
+  int64 parentId = 5;
+}
+
+// 评论响应
+message CommentResponse {
+  int64 code = 1;
+  string msg = 2;
+  int64 commentId = 3;
+}
+
+// 删除评论请求
+message DeleteCommentRequest {
+  int64 commentId = 1;
+}
+
+// 关注请求
+message FollowRequest {
+  int64 userId = 1;
+  string targetType = 2;
+  int64 targetId = 3;
+}
+
+// 关注响应
+message FollowResponse {
+  int64 code = 1;
+  string msg = 2;
+}
+
+// 举报请求
+message ReportRequest {
+  int64 userId = 1;
+  string targetType = 2;
+  int64 targetId = 3;
+  string reason = 4;
+}
+
+// 举报响应
+message ReportResponse {
+  int64 code = 1;
+  string msg = 2;
+} 

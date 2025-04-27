@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package file;
+
+option go_package = "./file";
+
+// 文件服务
+service File {
+  // 上传文件
+  rpc Upload(UploadRequest) returns (UploadResponse);
+  // 获取文件信息
+  rpc GetFile(GetFileRequest) returns (GetFileResponse);
+  // 删除文件
+  rpc DeleteFile(DeleteFileRequest) returns (DeleteFileResponse);
+  // 获取文件列表
+  rpc ListFiles(ListFilesRequest) returns (ListFilesResponse);
+}
+
+// 文件信息
+message FileInfo {
+  string fileId = 1;
+  string fileUrl = 2;
+  string fileType = 3;
+  int64 fileSize = 4;
+  int64 createdAt = 5;
+}
+
+// 上传文件请求
+message UploadRequest {
+  string fileType = 1;
+  bytes file = 2;
+}
+
+// 上传文件响应
+message UploadResponse {
+  int64 code = 1;
+  string msg = 2;
+  string fileId = 3;
+  string fileUrl = 4;
+  int64 fileSize = 5;
+}
+
+// 获取文件信息请求
+message GetFileRequest {
+  string fileId = 1;
+}
+
+// 获取文件信息响应
+message GetFileResponse {
+  int64 code = 1;
+  string msg = 2;
+  FileInfo data = 3;
+}
+
+// 删除文件请求
+message DeleteFileRequest {
+  string fileId = 1;
+}
+
+// 删除文件响应
+message DeleteFileResponse {
+  int64 code = 1;
+  string msg = 2;
+}
+
+// 获取文件列表请求
+message ListFilesRequest {
+  int64 userId = 1;
+  string fileType = 2;
+  int32 pageSize = 3;
+  string pageToken = 4;
+}
+
+// 获取文件列表响应
+message ListFilesResponse {
+  int64 code = 1;
+  string msg = 2;
+  repeated FileInfo items = 3;
+  string pageToken = 4;
+  bool hasMore = 5;
+} 

@@ -1,0 +1,106 @@
+syntax = "v1"
+
+info(
+    title: "文件服务API"
+    desc: "处理文件上传和存储管理的API"
+    author: "wz-backend-go"
+    version: "v1"
+)
+
+type (
+    // 上传文件请求
+    UploadRequest {
+        FileType string `json:"fileType"` // 文件类型：image/video
+        File     []byte `json:"file"`     // 文件内容
+    }
+
+    // 上传文件响应
+    UploadResponse {
+        Code int    `json:"code"`
+        Msg  string `json:"msg"`
+        Data struct {
+            FileId   string `json:"fileId"`   // 文件ID
+            FileUrl  string `json:"fileUrl"`  // 文件URL
+            FileSize int64  `json:"fileSize"` // 文件大小
+        } `json:"data"`
+    }
+
+    // 获取文件信息请求
+    GetFileRequest {
+        FileId string `json:"fileId"` // 文件ID
+    }
+
+    // 获取文件信息响应
+    GetFileResponse {
+        Code int    `json:"code"`
+        Msg  string `json:"msg"`
+        Data struct {
+            FileId    string `json:"fileId"`    // 文件ID
+            FileUrl   string `json:"fileUrl"`   // 文件URL
+            FileType  string `json:"fileType"`  // 文件类型
+            FileSize  int64  `json:"fileSize"`  // 文件大小
+            CreatedAt int64  `json:"createdAt"` // 创建时间
+        } `json:"data"`
+    }
+
+    // 删除文件请求
+    DeleteFileRequest {
+        FileId string `json:"fileId"` // 文件ID
+    }
+
+    // 删除文件响应
+    DeleteFileResponse {
+        Code int    `json:"code"`
+        Msg  string `json:"msg"`
+    }
+
+    // 获取文件列表请求
+    ListFilesRequest {
+        UserId    int64  `json:"userId"`
+        FileType  string `json:"fileType,optional"` // 文件类型，可选
+        PageSize  int    `json:"pageSize,optional"`  // 每页数量，可选
+        PageToken string `json:"pageToken,optional"` // 分页token，可选
+    }
+
+    // 获取文件列表响应
+    ListFilesResponse {
+        Code int    `json:"code"`
+        Msg  string `json:"msg"`
+        Data struct {
+            Items     []FileInfo `json:"items"`
+            PageToken string     `json:"pageToken"`
+            HasMore   bool       `json:"hasMore"`
+        } `json:"data"`
+    }
+
+    // 文件信息
+    FileInfo {
+        FileId    string `json:"fileId"`    // 文件ID
+        FileUrl   string `json:"fileUrl"`   // 文件URL
+        FileType  string `json:"fileType"`  // 文件类型
+        FileSize  int64  `json:"fileSize"`  // 文件大小
+        CreatedAt int64  `json:"createdAt"` // 创建时间
+    }
+)
+
+@server(
+    group: file
+    prefix: /api/v1/file
+)
+service file-api {
+    @doc "上传文件"
+    @handler Upload
+    post /upload (UploadRequest) returns (UploadResponse)
+
+    @doc "获取文件信息"
+    @handler GetFile
+    get /:fileId (GetFileRequest) returns (GetFileResponse)
+
+    @doc "删除文件"
+    @handler DeleteFile
+    delete /:fileId (DeleteFileRequest) returns (DeleteFileResponse)
+
+    @doc "获取文件列表"
+    @handler ListFiles
+    get /list (ListFilesRequest) returns (ListFilesResponse)
+} 

@@ -1,0 +1,47 @@
+Name: statistics-api
+Host: 0.0.0.0
+Port: 8888
+
+# 数据库配置
+DB:
+  DataSource: root:123456@tcp(127.0.0.1:3306)/wz_statistics?charset=utf8mb4&parseTime=true&loc=Asia%2FShanghai
+
+# Redis配置
+Redis:
+  Host: 127.0.0.1:6379
+  Pass: ""
+  Type: node
+
+# JWT配置
+Auth:
+  AccessSecret: your-secret-key
+  AccessExpire: 86400
+
+# 统计配置
+Statistics:
+  # 用户行为统计
+  UserBehavior:
+    RetentionDays: 30
+    BatchSize: 1000
+  
+  # 内容流行度统计
+  ContentPopularity:
+    UpdateInterval: 300 # 5分钟
+    TopN: 100
+  
+  # 用户画像
+  UserProfile:
+    UpdateInterval: 3600 # 1小时
+    MinInteractions: 10
+
+# 日志配置
+Log:
+  ServiceName: statistics-api
+  Mode: console
+  Encoding: plain
+  TimeFormat: 2006-01-02 15:04:05.000
+  Stat: false
+  Level: info
+  Compress: false
+  KeepDays: 7
+  StackCooldownMillis: 100 

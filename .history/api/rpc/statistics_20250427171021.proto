@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+package statistics;
+
+option go_package = "./statistics";
+
+// 统计服务
+service Statistics {
+  // 获取用户行为统计
+  rpc UserBehavior(UserBehaviorRequest) returns (UserBehaviorResponse);
+  // 获取内容流行度统计
+  rpc ContentPopularity(ContentPopularityRequest) returns (ContentPopularityResponse);
+  // 获取热门内容
+  rpc HotContent(HotContentRequest) returns (HotContentResponse);
+  // 获取用户画像
+  rpc UserProfile(UserProfileRequest) returns (UserProfileResponse);
+}
+
+// 用户行为统计请求
+message UserBehaviorRequest {
+  int64 userId = 1;
+  int64 startTime = 2;
+  int64 endTime = 3;
+  string type = 4;
+}
+
+// 用户行为统计响应
+message UserBehaviorResponse {
+  int64 code = 1;
+  string msg = 2;
+  int64 total = 3;
+  repeated int64 dailyData = 4;
+}
+
+// 内容流行度统计请求
+message ContentPopularityRequest {
+  int64 contentId = 1;
+  string type = 2;
+}
+
+// 内容流行度统计响应
+message ContentPopularityResponse {
+  int64 code = 1;
+  string msg = 2;
+  int64 views = 3;
+  int64 likes = 4;
+  int64 comments = 5;
+  int64 shares = 6;
+}
+
+// 热门内容项
+message HotContentItem {
+  int64 contentId = 1;
+  string title = 2;
+  int64 score = 3;
+}
+
+// 热门内容请求
+message HotContentRequest {
+  string type = 1;
+  string timeSpan = 2;
+  int32 limit = 3;
+}
+
+// 热门内容响应
+message HotContentResponse {
+  int64 code = 1;
+  string msg = 2;
+  repeated HotContentItem items = 3;
+}
+
+// 用户画像请求
+message UserProfileRequest {
+  int64 userId = 1;
+}
+
+// 用户画像响应
+message UserProfileResponse {
+  int64 code = 1;
+  string msg = 2;
+  repeated string interests = 3;
+  string activeTime = 4;
+  repeated string contentTypes = 5;
+} 

@@ -1,0 +1,100 @@
+syntax = "v1"
+
+info(
+    title: "通知服务API"
+    desc: "处理实时通知和定期通知的API"
+    author: "wz-backend-go"
+    version: "v1"
+)
+
+type (
+    // WebSocket连接请求
+    WSConnectRequest {
+        Token string `json:"token"` // JWT token
+    }
+
+    // WebSocket消息
+    WSMessage {
+        Type    string `json:"type"`    // 消息类型：like/comment/follow
+        Content string `json:"content"` // 消息内容
+        Data    string `json:"data"`    // 附加数据
+    }
+
+    // 邮件通知请求
+    EmailRequest {
+        To      string `json:"to"`      // 收件人
+        Subject string `json:"subject"` // 主题
+        Content string `json:"content"` // 内容
+    }
+
+    // 邮件通知响应
+    EmailResponse {
+        Code int    `json:"code"`
+        Msg  string `json:"msg"`
+    }
+
+    // 短信通知请求
+    SMSRequest {
+        Phone   string `json:"phone"`   // 手机号
+        Content string `json:"content"` // 内容
+    }
+
+    // 短信通知响应
+    SMSResponse {
+        Code int    `json:"code"`
+        Msg  string `json:"msg"`
+    }
+
+    // 获取通知列表请求
+    ListRequest {
+        UserId    int64  `json:"userId"`
+        PageSize  int    `json:"pageSize,optional"`  // 每页数量，可选
+        PageToken string `json:"pageToken,optional"` // 分页token，可选
+    }
+
+    // 获取通知列表响应
+    ListResponse {
+        Code int    `json:"code"`
+        Msg  string `json:"msg"`
+        Data struct {
+            Items     []Notification `json:"items"`
+            PageToken string         `json:"pageToken"`
+            HasMore   bool           `json:"hasMore"`
+        } `json:"data"`
+    }
+
+    // 通知项
+    Notification {
+        Id        int64  `json:"id"`
+        Type      string `json:"type"`      // 通知类型
+        Content   string `json:"content"`   // 通知内容
+        Read      bool   `json:"read"`      // 是否已读
+        CreatedAt int64  `json:"createdAt"` // 创建时间
+    }
+)
+
+@server(
+    group: notification
+    prefix: /api/v1/notification
+)
+service notification-api {
+    @doc "WebSocket连接"
+    @handler WSConnect
+    get /ws (WSConnectRequest) returns (stream WSMessage)
+
+    @doc "发送邮件通知"
+    @handler SendEmail
+    post /email (EmailRequest) returns (EmailResponse)
+
+    @doc "发送短信通知"
+    @handler SendSMS
+    post /sms (SMSRequest) returns (SMSResponse)
+
+    @doc "获取通知列表"
+    @handler List
+    get /list (ListRequest) returns (ListResponse)
+
+    @doc "标记通知为已读"
+    @handler MarkRead
+    put /read/:id returns (ListResponse)
+} 

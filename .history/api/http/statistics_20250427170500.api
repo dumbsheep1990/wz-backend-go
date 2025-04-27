@@ -1,0 +1,107 @@
+syntax = "v1"
+
+info(
+    title: "统计服务API"
+    desc: "处理用户行为和内容流行度统计的API"
+    author: "wz-backend-go"
+    version: "v1"
+)
+
+type (
+    // 用户行为统计请求
+    UserBehaviorRequest {
+        UserId    int64  `json:"userId"`
+        StartTime int64  `json:"startTime"` // 开始时间戳
+        EndTime   int64  `json:"endTime"`   // 结束时间戳
+        Type      string `json:"type"`      // 统计类型：view/like/comment
+    }
+
+    // 用户行为统计响应
+    UserBehaviorResponse {
+        Code int    `json:"code"`
+        Msg  string `json:"msg"`
+        Data struct {
+            Total     int64   `json:"total"`     // 总数
+            DailyData []int64 `json:"dailyData"` // 每日数据
+        } `json:"data"`
+    }
+
+    // 内容流行度统计请求
+    ContentPopularityRequest {
+        ContentId int64  `json:"contentId"`
+        Type      string `json:"type"` // 内容类型：post/article
+    }
+
+    // 内容流行度统计响应
+    ContentPopularityResponse {
+        Code int    `json:"code"`
+        Msg  string `json:"msg"`
+        Data struct {
+            Views    int64 `json:"views"`    // 浏览量
+            Likes    int64 `json:"likes"`    // 点赞数
+            Comments int64 `json:"comments"` // 评论数
+            Shares   int64 `json:"shares"`   // 分享数
+        } `json:"data"`
+    }
+
+    // 热门内容请求
+    HotContentRequest {
+        Type     string `json:"type"`     // 内容类型：post/article
+        TimeSpan string `json:"timeSpan"` // 时间范围：day/week/month
+        Limit    int    `json:"limit"`    // 返回数量
+    }
+
+    // 热门内容响应
+    HotContentResponse {
+        Code int    `json:"code"`
+        Msg  string `json:"msg"`
+        Data struct {
+            Items []HotContentItem `json:"items"`
+        } `json:"data"`
+    }
+
+    // 热门内容项
+    HotContentItem {
+        ContentId int64  `json:"contentId"`
+        Title     string `json:"title"`
+        Score     int64  `json:"score"` // 热度分数
+    }
+
+    // 用户画像请求
+    UserProfileRequest {
+        UserId int64 `json:"userId"`
+    }
+
+    // 用户画像响应
+    UserProfileResponse {
+        Code int    `json:"code"`
+        Msg  string `json:"msg"`
+        Data struct {
+            Interests    []string `json:"interests"`    // 兴趣标签
+            ActiveTime   string   `json:"activeTime"`   // 活跃时间段
+            ContentTypes []string `json:"contentTypes"` // 常浏览的内容类型
+        } `json:"data"`
+    }
+)
+
+@server(
+    group: statistics
+    prefix: /api/v1/statistics
+)
+service statistics-api {
+    @doc "获取用户行为统计"
+    @handler UserBehavior
+    get /user/behavior (UserBehaviorRequest) returns (UserBehaviorResponse)
+
+    @doc "获取内容流行度统计"
+    @handler ContentPopularity
+    get /content/popularity (ContentPopularityRequest) returns (ContentPopularityResponse)
+
+    @doc "获取热门内容"
+    @handler HotContent
+    get /content/hot (HotContentRequest) returns (HotContentResponse)
+
+    @doc "获取用户画像"
+    @handler UserProfile
+    get /user/profile (UserProfileRequest) returns (UserProfileResponse)
+} 

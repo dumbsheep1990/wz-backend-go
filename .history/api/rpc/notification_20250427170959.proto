@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package notification;
+
+option go_package = "./notification";
+
+// 通知服务
+service Notification {
+  // 发送通知
+  rpc Send(SendRequest) returns (SendResponse);
+  // 获取通知列表
+  rpc List(ListRequest) returns (ListResponse);
+  // 标记通知为已读
+  rpc MarkRead(MarkReadRequest) returns (MarkReadResponse);
+}
+
+// 通知项
+message Notification {
+  int64 id = 1;
+  string type = 2;
+  string content = 3;
+  bool read = 4;
+  int64 createdAt = 5;
+}
+
+// 发送通知请求
+message SendRequest {
+  int64 userId = 1;
+  string type = 2;
+  string content = 3;
+  string data = 4;
+}
+
+// 发送通知响应
+message SendResponse {
+  int64 code = 1;
+  string msg = 2;
+}
+
+// 获取通知列表请求
+message ListRequest {
+  int64 userId = 1;
+  int32 pageSize = 2;
+  string pageToken = 3;
+}
+
+// 获取通知列表响应
+message ListResponse {
+  int64 code = 1;
+  string msg = 2;
+  repeated Notification items = 3;
+  string pageToken = 4;
+  bool hasMore = 5;
+}
+
+// 标记通知为已读请求
+message MarkReadRequest {
+  int64 id = 1;
+}
+
+// 标记通知为已读响应
+message MarkReadResponse {
+  int64 code = 1;
+  string msg = 2;
+} 

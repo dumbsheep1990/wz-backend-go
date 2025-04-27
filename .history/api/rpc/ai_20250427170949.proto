@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package ai;
+
+option go_package = "./ai";
+
+// AI服务
+service AI {
+  // 获取推荐内容
+  rpc Recommend(RecommendRequest) returns (RecommendResponse);
+  // 内容审核
+  rpc ContentReview(ContentReviewRequest) returns (ContentReviewResponse);
+  // 客服对话
+  rpc Chat(ChatRequest) returns (ChatResponse);
+}
+
+// 推荐请求
+message RecommendRequest {
+  int64 userId = 1;
+  string scene = 2;
+  int32 pageSize = 3;
+  string pageToken = 4;
+}
+
+// 推荐项
+message RecommendItem {
+  int64 id = 1;
+  string type = 2;
+  string title = 3;
+  string description = 4;
+  double score = 5;
+}
+
+// 推荐响应
+message RecommendResponse {
+  int64 code = 1;
+  string msg = 2;
+  repeated RecommendItem items = 3;
+  string pageToken = 4;
+  bool hasMore = 5;
+}
+
+// 内容审核请求
+message ContentReviewRequest {
+  string content = 1;
+  string type = 2;
+}
+
+// 内容审核响应
+message ContentReviewResponse {
+  int64 code = 1;
+  string msg = 2;
+  bool passed = 3;
+  string reason = 4;
+  repeated string labels = 5;
+  double confidence = 6;
+}
+
+// 客服对话请求
+message ChatRequest {
+  int64 userId = 1;
+  string message = 2;
+}
+
+// 客服对话响应
+message ChatResponse {
+  int64 code = 1;
+  string msg = 2;
+  string message = 3;
+} 

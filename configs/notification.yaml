@@ -1,0 +1,55 @@
+Name: notification-api
+Host: 0.0.0.0
+Port: 8886
+
+# 数据库配置
+DB:
+  DataSource: root:123456@tcp(127.0.0.1:3306)/wz_notification?charset=utf8mb4&parseTime=true&loc=Asia%2FShanghai
+
+# Redis配置
+Redis:
+  Host: 127.0.0.1:6379
+  Pass: ""
+  Type: node
+
+# JWT配置
+Auth:
+  AccessSecret: your-secret-key
+  AccessExpire: 86400
+
+# WebSocket配置
+WebSocket:
+  ReadBufferSize: 1024
+  WriteBufferSize: 1024
+  MaxMessageSize: 512
+  PongWait: 60
+  PingPeriod: 54
+  WriteWait: 10
+
+# 邮件配置
+Email:
+  Host: smtp.example.com
+  Port: 587
+  Username: your-email@example.com
+  Password: your-password
+  From: your-email@example.com
+
+# 短信配置
+SMS:
+  Provider: aliyun
+  AccessKey: your-access-key
+  AccessSecret: your-access-secret
+  SignName: your-sign-name
+  TemplateCode: your-template-code
+
+# 日志配置
+Log:
+  ServiceName: notification-api
+  Mode: console
+  Encoding: plain
+  TimeFormat: 2006-01-02 15:04:05.000
+  Stat: false
+  Level: info
+  Compress: false
+  KeepDays: 7
+  StackCooldownMillis: 100 

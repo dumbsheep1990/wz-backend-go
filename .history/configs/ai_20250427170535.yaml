@@ -1,0 +1,49 @@
+Name: ai-api
+Host: 0.0.0.0
+Port: 8885
+
+# 数据库配置
+DB:
+  DataSource: root:123456@tcp(127.0.0.1:3306)/wz_ai?charset=utf8mb4&parseTime=true&loc=Asia%2FShanghai
+
+# Redis配置
+Redis:
+  Host: 127.0.0.1:6379
+  Pass: ""
+  Type: node
+
+# JWT配置
+Auth:
+  AccessSecret: your-secret-key
+  AccessExpire: 86400
+
+# AI模型配置
+AI:
+  # 推荐模型配置
+  Recommend:
+    ModelPath: ./models/recommend
+    BatchSize: 32
+    TopK: 10
+  
+  # 内容审核配置
+  ContentReview:
+    ModelPath: ./models/review
+    Threshold: 0.8
+  
+  # 客服对话配置
+  Chat:
+    ModelPath: ./models/chat
+    MaxLength: 512
+    Temperature: 0.7
+
+# 日志配置
+Log:
+  ServiceName: ai-api
+  Mode: console
+  Encoding: plain
+  TimeFormat: 2006-01-02 15:04:05.000
+  Stat: false
+  Level: info
+  Compress: false
+  KeepDays: 7
+  StackCooldownMillis: 100 

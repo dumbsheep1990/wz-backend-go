@@ -1,0 +1,98 @@
+syntax = "v1"
+
+info(
+    title: "交互服务API"
+    desc: "处理社交交互相关的API"
+    author: "wz-backend-go"
+    version: "v1"
+)
+
+type (
+    // 点赞请求
+    LikeRequest {
+        TargetType string `json:"targetType"` // 目标类型：post/comment
+        TargetId   int64  `json:"targetId"`   // 目标ID
+    }
+
+    // 点赞响应
+    LikeResponse {
+        Code int    `json:"code"`
+        Msg  string `json:"msg"`
+    }
+
+    // 评论请求
+    CommentRequest {
+        TargetType string `json:"targetType"` // 目标类型：post
+        TargetId   int64  `json:"targetId"`   // 目标ID
+        Content    string `json:"content"`    // 评论内容
+        ParentId   int64  `json:"parentId,optional"` // 父评论ID，可选
+    }
+
+    // 评论响应
+    CommentResponse {
+        Code int    `json:"code"`
+        Msg  string `json:"msg"`
+        Data struct {
+            CommentId int64 `json:"commentId"`
+        } `json:"data"`
+    }
+
+    // 关注请求
+    FollowRequest {
+        TargetType string `json:"targetType"` // 目标类型：user
+        TargetId   int64  `json:"targetId"`   // 目标ID
+    }
+
+    // 关注响应
+    FollowResponse {
+        Code int    `json:"code"`
+        Msg  string `json:"msg"`
+    }
+
+    // 举报请求
+    ReportRequest {
+        TargetType string `json:"targetType"` // 目标类型：post/comment/user
+        TargetId   int64  `json:"targetId"`   // 目标ID
+        Reason     string `json:"reason"`     // 举报原因
+    }
+
+    // 举报响应
+    ReportResponse {
+        Code int    `json:"code"`
+        Msg  string `json:"msg"`
+    }
+)
+
+@server(
+    group: interaction
+    prefix: /api/v1/interaction
+)
+service interaction-api {
+    @doc "点赞"
+    @handler Like
+    post /like (LikeRequest) returns (LikeResponse)
+
+    @doc "取消点赞"
+    @handler Unlike
+    post /unlike (LikeRequest) returns (LikeResponse)
+
+    @doc "发表评论"
+    @handler Comment
+    post /comment (CommentRequest) returns (CommentResponse)
+
+    @doc "删除评论"
+    @handler DeleteComment
+    delete /comment/:id returns (CommentResponse)
+
+    @doc "关注"
+    @handler Follow
+    post /follow (FollowRequest) returns (FollowResponse)
+
+    @doc "取消关注"
+    @handler Unfollow
+    post /unfollow (FollowRequest) returns (FollowResponse)
+
+    @doc "举报"
+    @handler Report
+    post /report (ReportRequest) returns (ReportResponse)
+} 
