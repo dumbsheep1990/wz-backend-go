@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/casbin/casbin/v2"
 	"github.com/go-redis/redis/v8"
@@ -225,7 +226,10 @@ func (s *authorizationService) GetPermissionsForRole(ctx context.Context, role s
 	}
 
 	// 缓存未命中或解析失败，从Casbin获取
-	perms := s.enforcer.GetFilteredPolicy(0, role)
+	perms, err := s.enforcer.GetFilteredPolicy(0, role)
+	if err != nil {
+		return nil, fmt.Errorf("获取角色权限失败: %w", err)
+	}
 
 	// 缓存结果（5分钟过期）
 	permsBytes, _ := json.Marshal(perms)
@@ -286,7 +290,12 @@ func (s *authorizationService) clearPermissionCacheForRole(ctx context.Context, 
 	s.redis.Del(ctx, fmt.Sprintf("perms:%s", role))
 	
 	// 获取所有具有该角色的用户
-	users := s.enforcer.GetUsersForRole(role)
+	users, err := s.enforcer.GetUsersForRole(role)
+	if err != nil {
+		// 记录错误但继续执行，因为这只是缓存清理操作
+		log.Printf("获取角色用户列表失败: %v", err)
+		return
+	}
 	
 	// 删除这些用户的权限缓存
 	for _, user := range users {

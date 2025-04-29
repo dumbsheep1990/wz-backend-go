@@ -1,0 +1,198 @@
+server:
+  host: "0.0.0.0"
+  port: 8000
+  readTimeout: 30
+  writeTimeout: 30
+
+logging:
+  level: "debug"  # 可选: debug, info, warn, error
+  file: "logs/gateway.log"
+  format: "json"  # 可选: json, text
+  console: true
+
+# 安全配置
+security:
+  jwtSecret: "wz-backend-jwt-secret-key-change-in-production"
+  jwtExpiration: 1440  # 24小时
+  allowedOrigins:
+    - "localhost"
+    - "*.wanzhiwen.com"
+  allowedHeaders:
+    - "Content-Type"
+    - "Authorization"
+    - "X-Tenant-ID"
+  trustedProxies:
+    - "127.0.0.1"
+    - "localhost"
+  rateLimit: true
+  xssProtection: true
+  csrfProtection: false
+
+# CORS配置
+cors:
+  enabled: true
+  allowAllOrigins: false
+  allowOrigins:
+    - "http://localhost:8080"
+    - "https://*.wanzhiwen.com"
+  allowMethods:
+    - "GET"
+    - "POST"
+    - "PUT"
+    - "DELETE"
+    - "PATCH"
+    - "OPTIONS"
+  allowHeaders:
+    - "Origin"
+    - "Content-Type"
+    - "Accept"
+    - "Authorization"
+    - "X-Requested-With"
+    - "X-Tenant-ID"
+  exposeHeaders:
+    - "Content-Length"
+    - "X-Request-ID"
+  maxAge: 86400
+
+# 限流配置
+rate:
+  enabled: true
+  maxRequests: 100
+  intervalSecs: 60
+  strategy: "ip"  # 可选: ip, user, tenant
+
+# 服务配置
+services:
+  # 用户服务
+  - name: "user-service"
+    prefix: "/api/user"
+    target: "localhost:8080"
+    type: "http"
+    authentication: true
+    timeout: 30
+    methods:
+      - "GET"
+      - "POST"
+      - "PUT"
+      - "DELETE"
+    routes:
+      - path: "/profile"
+        method: "GET"
+        stripPath: false
+      - path: "/login"
+        method: "POST"
+        authentication: false
+        stripPath: false
+      - path: "/register"
+        method: "POST"
+        authentication: false
+        stripPath: false
+    loadBalancer:
+      type: "round-robin"
+      healthCheck:
+        enabled: true
+        interval: 30
+        path: "/health"
+        timeout: 5
+
+  # 内容服务
+  - name: "content-service"
+    prefix: "/api/content"
+    target: "localhost:8081"
+    type: "http"
+    authentication: true
+    timeout: 30
+    methods:
+      - "GET"
+      - "POST"
+      - "PUT"
+      - "DELETE"
+    loadBalancer:
+      type: "round-robin"
+      healthCheck:
+        enabled: true
+        interval: 30
+        path: "/health"
+        timeout: 5
+
+  # 搜索服务 (gRPC)
+  - name: "search-service"
+    prefix: "/api/search"
+    target: "localhost:50051"
+    type: "grpc"
+    authentication: true
+    timeout: 10
+    grpcOptions:
+      maxRecvMsgSize: 4194304  # 4MB
+      maxSendMsgSize: 4194304  # 4MB
+      packageName: "search"
+      serviceName: "SearchService"
+      compression: true
+      tls: false
+      methods:
+        - name: "Search"
+          httpMethod: "POST"
+          path: "/query"
+        - name: "GetSuggestions"
+          httpMethod: "GET"
+          path: "/suggestions"
+        - name: "GetHotSearches"
+          httpMethod: "GET"
+          path: "/hot"
+
+  # 交易服务
+  - name: "trade-service"
+    prefix: "/api/trade"
+    target: "localhost:8082"
+    type: "http"
+    authentication: true
+    timeout: 60
+    loadBalancer:
+      type: "round-robin"
+      healthCheck:
+        enabled: true
+        interval: 30
+        path: "/health"
+        timeout: 5
+
+  # 互动服务 (gRPC)
+  - name: "interaction-service"
+    prefix: "/api/interaction"
+    target: "localhost:50052"
+    type: "grpc"
+    authentication: true
+    timeout: 10
+    grpcOptions:
+      packageName: "interaction"
+      serviceName: "InteractionService"
+      methods:
+        - name: "Like"
+          httpMethod: "POST"
+          path: "/like"
+        - name: "Unlike"
+          httpMethod: "POST"
+          path: "/unlike"
+        - name: "Comment"
+          httpMethod: "POST"
+          path: "/comment"
+        - name: "Follow"
+          httpMethod: "POST"
+          path: "/follow"
+        - name: "Unfollow"
+          httpMethod: "POST"
+          path: "/unfollow"
+
+  # 公共接口服务
+  - name: "public-service"
+    prefix: "/api/public"
+    target: "localhost:8083"
+    type: "http"
+    authentication: false
+    timeout: 30
+    loadBalancer:
+      type: "round-robin"
+      healthCheck:
+        enabled: true
+        interval: 30
+        path: "/health"
+        timeout: 5
