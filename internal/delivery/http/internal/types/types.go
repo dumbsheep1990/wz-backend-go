@@ -3,17 +3,6 @@
 
 package types
 
-type LoginReq struct {
-	Username string `json:"username" validate:"required"`
-	Password string `json:"password" validate:"required"`
-}
-
-type LoginResp struct {
-	UserId   int64  `json:"user_id"`
-	Username string `json:"username"`
-	Token    string `json:"token"`
-}
-
 type RegisterReq struct {
 	Username string `json:"username" validate:"required"`
 	Password string `json:"password" validate:"required"`
@@ -68,15 +57,6 @@ type UserInfo struct {
 	UpdatedAt         string `json:"updated_at"`
 }
 
-// CompanyType represents the type of company for verification
-type CompanyType int32
-
-const (
-	CompanyTypeEnterprise    CompanyType = 1 // 企业
-	CompanyTypeGroup         CompanyType = 2 // 集团
-	CompanyTypeGovernment    CompanyType = 3 // 政府机构/NGO/协会
-	CompanyTypeResearchInst  CompanyType = 4 // 科研所
-)
 
 type VerifyCompanyReq struct {
 	CompanyType     CompanyType `json:"company_type" validate:"required"`
@@ -100,22 +80,6 @@ type VerifyCompanyReq struct {
 }
 
 type VerifyCompanyResp struct {
-	Success bool `json:"success"`
-}
-
-type EnterpriseRegistrationReq struct {
-	CompanyName      string      `json:"company_name" validate:"required"`
-	CompanyType      CompanyType `json:"company_type" validate:"required"`
-	ContactPerson    string      `json:"contact_person" validate:"required"`
-	JobPosition      string      `json:"job_position" validate:"required"`
-	Region           string      `json:"region" validate:"required"`
-	VerificationMethod string    `json:"verification_method" validate:"required"`
-	DetailedAddress  string      `json:"detailed_address" validate:"required"`
-	LocationLatitude float64     `json:"location_latitude"`
-	LocationLongitude float64    `json:"location_longitude"`
-}
-
-type EnterpriseRegistrationResp struct {
 	Success bool `json:"success"`
 }
 

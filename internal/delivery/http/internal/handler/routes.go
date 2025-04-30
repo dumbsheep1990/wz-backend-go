@@ -9,7 +9,6 @@ import (
 	auth "wz-backend-go/internal/delivery/http/internal/handler/auth"
 	public "wz-backend-go/internal/delivery/http/internal/handler/public"
 	users "wz-backend-go/internal/delivery/http/internal/handler/users"
-	"wz-backend-go/internal/delivery/http/internal/middleware"
 	"wz-backend-go/internal/delivery/http/internal/svc"
 
 	"github.com/zeromicro/go-zero/rest"

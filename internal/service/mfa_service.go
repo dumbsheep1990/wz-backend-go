@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v8"
-	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"
 )
 
@@ -88,13 +87,13 @@ func (s *mfaService) EnableMFA(ctx context.Context, userID int64, secret string)
 	// 存储MFA密钥
 	secretKey := fmt.Sprintf("mfa:secret:%d", userID)
 	enabledKey := fmt.Sprintf("mfa:enabled:%d", userID)
-	
+
 	// 存储密钥和启用状态
 	pipe := s.redis.Pipeline()
 	pipe.Set(ctx, secretKey, secret, 0) // 永不过期
 	pipe.Set(ctx, enabledKey, "1", 0)   // 永不过期
 	_, err := pipe.Exec(ctx)
-	
+
 	return err
 }
 
@@ -103,12 +102,12 @@ func (s *mfaService) DisableMFA(ctx context.Context, userID int64) error {
 	// 删除MFA相关键
 	secretKey := fmt.Sprintf("mfa:secret:%d", userID)
 	enabledKey := fmt.Sprintf("mfa:enabled:%d", userID)
-	
+
 	pipe := s.redis.Pipeline()
 	pipe.Del(ctx, secretKey)
 	pipe.Del(ctx, enabledKey)
 	_, err := pipe.Exec(ctx)
-	
+
 	return err
 }
 
@@ -119,6 +118,6 @@ func (s *mfaService) IsMFAEnabled(ctx context.Context, userID int64) (bool, erro
 	if err != nil {
 		return false, err
 	}
-	
+
 	return result > 0, nil
 }
