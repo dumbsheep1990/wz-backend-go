@@ -5,6 +5,7 @@
 ### 实现概述
 
 今日更新主要针对以下功能：
+
 - 服务注册与发现机制
 - 健康检查和自动恢复机制
 - 服务实例管理
@@ -12,24 +13,28 @@
 ### 功能实现清单
 
 1. **服务注册与发现模块**
+   
    - 基于Nacos的服务注册实现
    - 服务发现与查询机制
    - 服务变更通知与订阅
    - 自动化的服务实例管理
 
 2. **健康检查系统**
+   
    - HTTP健康检查接口
    - 可扩展的健康检查机制
    - 自动化的健康状态更新
    - 支持存活检查(liveness)和就绪检查(readiness)
 
 3. **服务实例管理**
+   
    - 实例状态管理
    - 实例元数据管理
    - 自动心跳机制
    - 服务实例生命周期管理
 
 4. **服务注册与发现API接口**
+   
    - 服务列表查询接口：`GET /api/v1/registry/services`
    - 服务实例查询接口：`GET /api/v1/registry/services/:serviceName/instances`
    - 服务实例注册接口：`POST /api/v1/registry/services/:serviceName/instances`
@@ -77,6 +82,7 @@ internal/
 - **缓存优化**: 本地缓存服务实例信息，提高查询效率
 
 关键接口：
+
 ```go
 // ServiceRegistry 定义服务注册接口
 type ServiceRegistry interface {
@@ -97,6 +103,7 @@ type ServiceRegistry interface {
 - **标准接口**: 提供符合云原生规范的健康检查接口(/health, /health/live, /health/ready)
 
 关键接口：
+
 ```go
 // HealthChecker 定义健康检查器接口
 type HealthChecker interface {
@@ -116,6 +123,7 @@ type HealthChecker interface {
 - **元数据管理**: 支持丰富的实例元数据，便于服务治理
 
 关键接口：
+
 ```go
 // InstanceManager 服务实例管理器接口
 type InstanceManager interface {
@@ -140,6 +148,7 @@ type InstanceManager interface {
 ### 配置说明
 
 Nacos配置示例：
+
 ```go
 config := &NacosConfig{
     ServerAddr: "127.0.0.1",          // Nacos服务器地址
@@ -157,18 +166,22 @@ config := &NacosConfig{
 ### 最佳实践
 
 1. **服务命名**
+   
    - 使用有意义且一致的服务命名规则
    - 建议格式: `<组织>.<应用>.<服务>`，如 `wz.user.auth-service`
 
 2. **实例元数据**
+   
    - 合理利用元数据传递关键信息
    - 推荐元数据项: 版本、环境、区域、负责人等
 
 3. **健康检查**
+   
    - 实现细粒度的健康检查
    - 区分liveness(存活检查)和readiness(就绪检查)
 
 4. **优雅关闭**
+   
    - 先更新状态为下线中
    - 停止接收新请求
    - 等待处理中请求完成
@@ -177,17 +190,21 @@ config := &NacosConfig{
 ### 后续计划
 
 1. **监控集成**
+   
    - 与Prometheus集成，实现服务指标监控
    - 添加更多运行时指标收集
 
 2. **熔断机制**
+   
    - 集成断路器模式
    - 实现服务降级策略
 
 3. **数据一致性**
+   
    - 优化服务实例缓存策略
    - 增强数据一致性保障
 
 4. **自动恢复**
+   
    - 增强实例自动恢复机制
    - 添加故障自愈能力

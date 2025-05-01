@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 )
 
 // HealthChecker 定义健康检查器接口
@@ -72,10 +74,10 @@ func NewHealthCheckServer(port int, interval time.Duration) *HealthCheckServer {
 	}
 
 	h := &HealthCheckServer{
-		checks:        make(map[string]CheckFunc),
-		results:       make(map[string]CheckResult),
-		checkInterval: interval,
-		stopChan:      make(chan struct{}),
+		checks:         make(map[string]CheckFunc),
+		results:        make(map[string]CheckResult),
+		checkInterval:  interval,
+		stopChan:       make(chan struct{}),
 		checkInProcess: false,
 	}
 
@@ -243,7 +245,7 @@ func (h *HealthCheckServer) healthHandler(w http.ResponseWriter, r *http.Request
 	defer h.mutex.RUnlock()
 
 	w.Header().Set("Content-Type", "application/json")
-	
+
 	healthy := true
 	for _, result := range h.results {
 		if result.Status == StatusFailing {
@@ -271,7 +273,7 @@ func (h *HealthCheckServer) livenessHandler(w http.ResponseWriter, r *http.Reque
 // readinessHandler 处理就绪检查请求
 func (h *HealthCheckServer) readinessHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	
+
 	if h.isSystemHealthy() {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, `{"status":"UP"}`)
@@ -323,17 +325,17 @@ func NacosHealthCheck(registry *NacosRegistry) CheckFunc {
 		if registry == nil || registry.client == nil {
 			return fmt.Errorf("Nacos客户端未初始化")
 		}
-		
+
 		// 可以通过获取一个已知服务来检查Nacos连接
 		_, err := registry.client.GetService(vo.GetServiceParam{
 			ServiceName: "health-check-probe",
 			GroupName:   registry.config.Group,
 		})
-		
+
 		if err != nil {
 			return fmt.Errorf("Nacos连接异常: %w", err)
 		}
-		
+
 		return nil
 	}
 }
