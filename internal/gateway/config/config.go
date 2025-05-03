@@ -14,6 +14,7 @@ type Config struct {
 	Security SecurityConfig `yaml:"security"`
 	Cors     CorsConfig     `yaml:"cors"`
 	Rate     RateConfig     `yaml:"rate"`
+	GRPC     GRPCConfig     `yaml:"grpc"`
 }
 
 // ServerConfig 服务器配置
@@ -80,6 +81,48 @@ type SecurityConfig struct {
 	RateLimit      bool              `yaml:"rateLimit"`
 	XSSProtection bool              `yaml:"xssProtection"`
 	CSRFProtection bool              `yaml:"csrfProtection"`
+
+	// 认证机制
+	AuthMethods    []string           `yaml:"authMethods"`   // 支持的认证方法：jwt, apikey, oauth2, basic
+	DefaultAuth    string             `yaml:"defaultAuth"`   // 默认认证方法
+
+	// API Key配置
+	APIKey         APIKeyConfig       `yaml:"apiKey"`
+
+	// OAuth2配置
+	OAuth2         OAuth2Config        `yaml:"oauth2"`
+
+	// RBAC配置
+	RBAC           RBACConfig          `yaml:"rbac"`
+}
+
+// APIKeyConfig API Key配置
+type APIKeyConfig struct {
+	Enabled       bool                `yaml:"enabled"`
+	HeaderName    string              `yaml:"headerName"`    // 自定义头名称，默认为X-API-Key
+	QueryParamName string             `yaml:"queryParamName"` // 自定义查询参数名称，默认为api_key
+	KeysFile      string              `yaml:"keysFile"`      // API Keys配置文件路径
+}
+
+// OAuth2Config OAuth2配置
+type OAuth2Config struct {
+	Enabled          bool              `yaml:"enabled"`
+	ClientID         string            `yaml:"clientId"`
+	ClientSecret     string            `yaml:"clientSecret"`
+	AuthorizationURL string            `yaml:"authorizationUrl"`
+	TokenURL         string            `yaml:"tokenUrl"`
+	RedirectURI      string            `yaml:"redirectUri"`
+	Scope            string            `yaml:"scope"`
+	UserInfoURL      string            `yaml:"userInfoUrl"`
+	ProviderType     string            `yaml:"providerType"`  // 如 'google', 'github' 等
+}
+
+// RBACConfig RBAC配置
+type RBACConfig struct {
+	Enabled          bool              `yaml:"enabled"`
+	PolicyFile       string            `yaml:"policyFile"`    // RBAC策略文件路径
+	DefaultRole      string            `yaml:"defaultRole"`   // 默认角色
+	RoleClaim        string            `yaml:"roleClaim"`     // 角色声明字段名
 }
 
 // CorsConfig CORS配置
@@ -103,15 +146,21 @@ type RateConfig struct {
 
 // GrpcServiceOptions gRPC服务特定配置
 type GrpcServiceOptions struct {
-	MaxRecvMsgSize int               `yaml:"maxRecvMsgSize"`
-	MaxSendMsgSize int               `yaml:"maxSendMsgSize"`
-	PackageName    string            `yaml:"packageName"`
-	ServiceName    string            `yaml:"serviceName"`
-	Compression    bool              `yaml:"compression"`
-	TLS            bool              `yaml:"tls"`
-	CertFile       string            `yaml:"certFile"`
-	KeyFile        string            `yaml:"keyFile"`
-	Methods        []GrpcMethodConfig `yaml:"methods"`
+	MaxRecvMsgSize    int               `yaml:"maxRecvMsgSize"`
+	MaxSendMsgSize    int               `yaml:"maxSendMsgSize"`
+	PackageName       string            `yaml:"packageName"`
+	ServiceName       string            `yaml:"serviceName"`
+	Compression       bool              `yaml:"compression"`
+	TLS               bool              `yaml:"tls"`
+	CertFile          string            `yaml:"certFile"`
+	KeyFile           string            `yaml:"keyFile"`
+	Methods           []GrpcMethodConfig `yaml:"methods"`
+	DialTimeout       int               `yaml:"dialTimeout"`        // 连接超时时间(秒)
+	KeepAliveTime     int               `yaml:"keepAliveTime"`      // keepalive探针间隔时间(秒)
+	KeepAliveTimeout  int               `yaml:"keepAliveTimeout"`   // keepalive超时时间(秒)
+	EnableReflection  bool              `yaml:"enableReflection"`   // 是否启用gRPC反射
+	AutoDiscovery     bool              `yaml:"autoDiscovery"`      // 是否启用自动服务发现
+	ServiceDiscovery  string            `yaml:"serviceDiscovery"`   // 服务发现类型（nacos, consul, etcd等）
 }
 
 // GrpcMethodConfig gRPC方法配置
@@ -119,6 +168,21 @@ type GrpcMethodConfig struct {
 	Name       string `yaml:"name"`
 	HTTPMethod string `yaml:"httpMethod"`
 	Path       string `yaml:"path"`
+}
+
+// GRPCConfig 全局gRPC客户端配置
+type GRPCConfig struct {
+	MaxRecvMsgSize       int    `yaml:"maxRecvMsgSize"`       // 最大接收消息大小
+	MaxSendMsgSize       int    `yaml:"maxSendMsgSize"`       // 最大发送消息大小
+	DialTimeout          int    `yaml:"dialTimeout"`          // 连接超时(秒)，默认5
+	KeepAliveTime        int    `yaml:"keepAliveTime"`        // keepalive探针间隔(秒)，默认60
+	KeepAliveTimeout     int    `yaml:"keepAliveTimeout"`     // keepalive超时(秒)，默认20
+	HealthCheckInterval  int    `yaml:"healthCheckInterval"`  // 健康检查间隔(秒)，默认30
+	ConnectionPoolSize   int    `yaml:"connectionPoolSize"`   // 连接池大小，默认5
+	EnableCompression    bool   `yaml:"enableCompression"`    // 是否启用压缩
+	EnableReflection     bool   `yaml:"enableReflection"`     // 是否启用反射
+	RetryCount           int    `yaml:"retryCount"`           // 重试次数，默认3
+	RetryWaitTime        int    `yaml:"retryWaitTime"`        // 重试等待时间(秒)，默认1
 }
 
 // Load 从文件加载配置

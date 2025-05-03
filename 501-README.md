@@ -136,5 +136,3 @@ func AddUserIDToSpan(span trace.Span, userID string)
 // WithTraceContext 创建一个带有追踪上下文的函数包装器
 func WithTraceContext(operation string, f func(ctx context.Context) error) func(ctx context.Context) error
 ```
-
-
