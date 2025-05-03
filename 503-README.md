@@ -140,10 +140,10 @@ func (r *DynamicRouter) RegisterService(service config.ServiceConfig,
 type AuthProvider interface {
     // Authenticate 从请求中提取凭据并验证
     Authenticate(c *gin.Context) (*AuthUser, error)
-    
+
     // GenerateCredentials 生成新的凭据
     GenerateCredentials(user *AuthUser) (map[string]interface{}, error)
-    
+
     // Name 获取提供者名称
     Name() string
 }
