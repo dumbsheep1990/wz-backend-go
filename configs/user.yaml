@@ -7,6 +7,16 @@ Log:
   ServiceName: user-api
   Level: info
 
+# 遥测配置
+Telemetry:
+  Enabled: true
+  CollectorURL: localhost:4317  # OTLP gRPC 收集器地址
+  ServiceName: user-service
+  ServiceVersion: 1.0.0
+  SamplingRatio: 1.0  # 1.0 表示全量采样
+  ExportBatchSize: 512
+  ExportTimeout: 5s
+
 DB:
   DataSource: root:password@tcp(localhost:3306)/wz_backend?charset=utf8mb4&parseTime=true&loc=Asia%2FShanghai
 

@@ -3,12 +3,24 @@ server:
   port: 8000
   readTimeout: 30
   writeTimeout: 30
+  shutdownTimeout: 10
+  environment: "development"
 
 logging:
   level: "debug"  # 可选: debug, info, warn, error
   file: "logs/gateway.log"
   format: "json"  # 可选: json, text
   console: true
+
+# 遥测配置
+telemetry:
+  enabled: true
+  collectorURL: "localhost:4317"  # OTLP gRPC 收集器地址
+  serviceName: "api-gateway"
+  serviceVersion: "1.0.0"
+  samplingRatio: 1.0  # 1.0 表示全量采样
+  exportBatchSize: 512
+  exportTimeout: 5s
 
 # 安全配置
 security:

@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"runtime"
+	"runtime/debug"
 	"strings"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -183,4 +184,68 @@ func FormatTraceURL(traceID string, backendType string, backendURL string) strin
 	}
 
 	return ""
+}
+
+// RecordError 记录错误信息到Span
+func RecordError(span trace.Span, err error, msg string, attrs ...attribute.KeyValue) {
+	if span == nil || err == nil {
+		return
+	}
+
+	// 设置Span状态为错误
+	span.SetStatus(codes.Error, msg)
+	
+	// 记录错误事件
+	eventAttrs := []attribute.KeyValue{
+		attribute.String("error.message", err.Error()),
+		attribute.String("error.type", fmt.Sprintf("%T", err)),
+	}
+	
+	// 添加堆栈跟踪（只在开发环境建议开启）
+	stack := debug.Stack()
+	if len(stack) > 0 {
+		// 限制堆栈跟踪的大小，防止过大
+		stackStr := string(stack)
+		if len(stackStr) > 2000 {
+			stackStr = stackStr[:2000] + "..."
+		}
+		eventAttrs = append(eventAttrs, attribute.String("error.stack", stackStr))
+	}
+	
+	// 添加自定义属性
+	eventAttrs = append(eventAttrs, attrs...)
+	
+	// 记录错误事件
+	span.AddEvent("error", trace.WithAttributes(eventAttrs...))
+}
+
+// ExtractErrorDetails 从错误中提取详细信息，并将其转换为属性列表
+func ExtractErrorDetails(err error) []attribute.KeyValue {
+	if err == nil {
+		return nil
+	}
+	
+	attrs := []attribute.KeyValue{
+		attribute.String("error.message", err.Error()),
+		attribute.String("error.type", fmt.Sprintf("%T", err)),
+	}
+	
+	// 处理特定类型的错误，可以扩展以支持自定义错误类型
+	// ...
+	
+	return attrs
+}
+
+// SanitizeSpanName 清理Span名称，确保符合OpenTelemetry规范
+func SanitizeSpanName(name string) string {
+	// 替换非法字符
+	name = strings.ReplaceAll(name, ".", "_")
+	name = strings.ReplaceAll(name, " ", "_")
+	
+	// 限制长度
+	if len(name) > 100 {
+		name = name[:97] + "..."
+	}
+	
+	return name
 }
