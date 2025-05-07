@@ -1,0 +1,99 @@
+syntax = "v1"
+
+info (
+    title: "后台用户管理API"
+    desc: "提供管理员对用户进行管理的接口"
+    author: "wz-backend-go"
+    version: "1.0"
+)
+
+type (
+    // 用户分页查询请求
+    UserListReq {
+        Page      int    `form:"page,default=1"`
+        PageSize  int    `form:"pageSize,default=10"`
+        Username  string `form:"username,optional"`
+        Email     string `form:"email,optional"`
+        Phone     string `form:"phone,optional"`
+        Status    int    `form:"status,optional"`
+        Role      string `form:"role,optional"`
+        StartTime string `form:"startTime,optional"`
+        EndTime   string `form:"endTime,optional"`
+    }
+
+    // 用户信息详情
+    UserDetail {
+        ID               int64  `json:"id"`
+        Username         string `json:"username"`
+        Email            string `json:"email"`
+        Phone            string `json:"phone"`
+        Role             string `json:"role"`
+        Status           int32  `json:"status"`
+        IsVerified       bool   `json:"is_verified"`
+        IsCompanyVerified bool  `json:"is_company_verified"`
+        DefaultTenantID  int64  `json:"default_tenant_id"`
+        CreatedAt        string `json:"created_at"`
+        UpdatedAt        string `json:"updated_at"`
+    }
+
+    // 用户列表响应
+    UserListResp {
+        Total int64        `json:"total"`
+        List  []UserDetail `json:"list"`
+    }
+
+    // 管理员创建用户请求
+    AdminCreateUserReq {
+        Username        string `json:"username" validate:"required"`
+        Password        string `json:"password" validate:"required"`
+        Email           string `json:"email" validate:"required,email"`
+        Phone           string `json:"phone" validate:"required"`
+        Role            string `json:"role" validate:"required"`
+        Status          int32  `json:"status" validate:"required"`
+        DefaultTenantID int64  `json:"default_tenant_id,optional"`
+    }
+
+    // 管理员创建用户响应
+    AdminCreateUserResp {
+        ID       int64  `json:"id"`
+        Username string `json:"username"`
+    }
+
+    // 管理员更新用户请求
+    AdminUpdateUserReq {
+        Username        string `json:"username,optional"`
+        Password        string `json:"password,optional"`
+        Email           string `json:"email,optional"`
+        Phone           string `json:"phone,optional"`
+        Role            string `json:"role,optional"`
+        Status          int32  `json:"status,optional"`
+        DefaultTenantID int64  `json:"default_tenant_id,optional"`
+    }
+
+    // 通用成功响应
+    SuccessResp {
+        Success bool `json:"success"`
+    }
+)
+
+@server (
+    jwt: Auth
+    group: admin
+    middleware: AdminCheck // 确保只有管理员可以访问
+)
+service Admin {
+    @handler GetUserList
+    get /api/v1/admin/users (UserListReq) returns (UserListResp)
+
+    @handler GetUserDetail
+    get /api/v1/admin/users/:id returns (UserDetail)
+
+    @handler CreateUser
+    post /api/v1/admin/users (AdminCreateUserReq) returns (AdminCreateUserResp)
+
+    @handler UpdateUser
+    put /api/v1/admin/users/:id (AdminUpdateUserReq) returns (SuccessResp)
+
+    @handler DeleteUser
+    delete /api/v1/admin/users/:id returns (SuccessResp)
+} 

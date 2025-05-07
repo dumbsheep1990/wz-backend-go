@@ -1,0 +1,60 @@
+Name: admin-api
+Host: 0.0.0.0
+Port: 8085
+Timeout: 10000
+
+Auth:
+  AccessSecret: your-access-secret-for-jwt # 与用户服务相同的JWT密钥
+  AccessExpire: 86400 # 24小时有效期
+
+Log:
+  ServiceName: admin-api
+  Mode: console
+  Level: info
+  Encoding: plain
+
+# MySQL数据库配置
+Database:
+  Driver: mysql
+  DataSource: root:password@tcp(localhost:3306)/wz_db?charset=utf8mb4&parseTime=true&loc=Local
+
+# Redis配置
+Redis:
+  Host: localhost:6379
+  Pass: 
+  DB: 0
+  PoolSize: 100
+
+# 服务发现（用于调用其他微服务的RPC接口）
+Etcd:
+  Hosts:
+    - localhost:2379
+  Key: admin-api
+
+# 用户服务RPC配置
+UserRpc:
+  Etcd:
+    Hosts:
+      - localhost:2379
+    Key: user-rpc
+
+# 内容服务RPC配置
+ContentRpc:
+  Etcd:
+    Hosts:
+      - localhost:2379
+    Key: content-rpc
+
+# 交易服务RPC配置
+TradeRpc:
+  Etcd:
+    Hosts:
+      - localhost:2379
+    Key: trade-rpc
+
+# 搜索服务RPC配置
+SearchRpc:
+  Etcd:
+    Hosts:
+      - localhost:2379
+    Key: search-rpc 
