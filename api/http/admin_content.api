@@ -1,0 +1,151 @@
+syntax = "v1"
+
+info (
+    title: "后台内容管理API"
+    desc: "提供平台管理员对内容进行管理的接口"
+    author: "wz-backend-go"
+    version: "1.0"
+)
+
+type (
+    // 内容分页查询请求
+    ContentListReq {
+        Page      int    `form:"page,default=1"`
+        PageSize  int    `form:"pageSize,default=10"`
+        Type      string `form:"type,optional"` // 内容类型：post, review等
+        Status    int    `form:"status,optional"`
+        UserId    int64  `form:"userId,optional"`
+        CategoryId int64 `form:"categoryId,optional"`
+        Keyword   string `form:"keyword,optional"`
+        StartTime string `form:"startTime,optional"`
+        EndTime   string `form:"endTime,optional"`
+    }
+
+    // 内容详情
+    ContentDetail {
+        Id           int64  `json:"id"`
+        Type         string `json:"type"` // 内容类型：post, review等
+        Title        string `json:"title,optional"`
+        Content      string `json:"content"`
+        UserId       int64  `json:"user_id"`
+        CategoryId   int64  `json:"category_id,optional"`
+        Status       int    `json:"status"`
+        ViewCount    int    `json:"view_count,optional"`
+        LikeCount    int    `json:"like_count,optional"`
+        CommentCount int    `json:"comment_count,optional"`
+        CreatedAt    string `json:"created_at"`
+        UpdatedAt    string `json:"updated_at"`
+    }
+
+    // 内容列表响应
+    ContentListResp {
+        Total int64           `json:"total"`
+        List  []ContentDetail `json:"list"`
+    }
+
+    // 更新内容状态请求
+    UpdateContentStatusReq {
+        Status     int    `json:"status" validate:"required"`
+        Reason     string `json:"reason,optional"`
+        OperatorId int64  `json:"operator_id,optional"`
+    }
+
+    // 推荐内容请求
+    RecommendContentReq {
+        Type       string `json:"type" validate:"required"`     // 内容类型：post, review等
+        ResourceId int64  `json:"resource_id" validate:"required"`
+        SortOrder  int    `json:"sort_order,optional,default=0"`
+        ExpireAt   string `json:"expire_at,optional"`          // 推荐过期时间
+    }
+
+    // 分类管理请求
+    CategoryListReq {
+        Page      int    `form:"page,default=1"`
+        PageSize  int    `form:"pageSize,default=10"`
+        Name      string `form:"name,optional"`
+        Status    int    `form:"status,optional"`
+        ParentId  int64  `form:"parentId,optional"`
+    }
+
+    // 分类详情
+    CategoryDetail {
+        Id          int64  `json:"id"`
+        Name        string `json:"name"`
+        Description string `json:"description,optional"`
+        ParentId    int64  `json:"parent_id"`
+        SortOrder   int    `json:"sort_order"`
+        Status      int    `json:"status"`
+        CreatedAt   string `json:"created_at"`
+        UpdatedAt   string `json:"updated_at"`
+    }
+
+    // 分类列表响应
+    CategoryListResp {
+        Total int64           `json:"total"`
+        List  []CategoryDetail `json:"list"`
+    }
+
+    // 创建分类请求
+    CreateCategoryReq {
+        Name        string `json:"name" validate:"required"`
+        Description string `json:"description,optional"`
+        ParentId    int64  `json:"parent_id,optional,default=0"`
+        SortOrder   int    `json:"sort_order,optional,default=0"`
+        Status      int    `json:"status,optional,default=1"`
+    }
+
+    // 更新分类请求
+    UpdateCategoryReq {
+        Name        string `json:"name,optional"`
+        Description string `json:"description,optional"`
+        ParentId    int64  `json:"parent_id,optional"`
+        SortOrder   int    `json:"sort_order,optional"`
+        Status      int    `json:"status,optional"`
+    }
+
+    // 统一响应
+    SuccessResp {
+        Success bool   `json:"success"`
+        Message string `json:"message,optional"`
+    }
+)
+
+@server (
+    jwt: Auth
+    group: admin
+    middleware: AdminCheck
+)
+service Admin {
+    @handler GetContentList
+    get /api/v1/admin/contents (ContentListReq) returns (ContentListResp)
+
+    @handler GetContentDetail
+    get /api/v1/admin/contents/:id returns (ContentDetail)
+
+    @handler UpdateContentStatus
+    put /api/v1/admin/contents/:id/status (UpdateContentStatusReq) returns (SuccessResp)
+
+    @handler DeleteContent
+    delete /api/v1/admin/contents/:id returns (SuccessResp)
+
+    @handler RecommendContent
+    post /api/v1/admin/contents/recommend (RecommendContentReq) returns (SuccessResp)
+
+    @handler CancelRecommendation
+    delete /api/v1/admin/contents/recommend/:id returns (SuccessResp)
+
+    @handler GetCategoryList
+    get /api/v1/admin/categories (CategoryListReq) returns (CategoryListResp)
+
+    @handler GetCategoryDetail
+    get /api/v1/admin/categories/:id returns (CategoryDetail)
+
+    @handler CreateCategory
+    post /api/v1/admin/categories (CreateCategoryReq) returns (CategoryDetail)
+
+    @handler UpdateCategory
+    put /api/v1/admin/categories/:id (UpdateCategoryReq) returns (SuccessResp)
+
+    @handler DeleteCategory
+    delete /api/v1/admin/categories/:id returns (SuccessResp)
+} 

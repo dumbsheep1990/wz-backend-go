@@ -189,7 +189,7 @@ func (r *SqlUserRepository) GetUserList(ctx context.Context, page, pageSize int,
     // 构建动态查询条件
     whereClause := "1=1"
     args := []interface{}{}
-    
+
     // 动态添加查询条件
     if filters != nil {
         for key, value := range filters {
@@ -197,10 +197,10 @@ func (r *SqlUserRepository) GetUserList(ctx context.Context, page, pageSize int,
             // ...
         }
     }
-    
+
     // 执行查询
     // ...
-    
+
     return users, count, nil
 }
 ```
@@ -226,20 +226,20 @@ func (l *GetUserListLogic) GetUserList(req *UserListReq) (*UserListResp, error) 
         filters["email"] = req.Email
     }
     // ...其他条件
-    
+
     // 调用仓库层查询数据
     users, total, err := l.svcCtx.UserRepo.GetUserList(l.ctx, req.Page, req.PageSize, filters)
     if err != nil {
         return nil, fmt.Errorf("查询用户列表失败: %v", err)
     }
-    
+
     // 转换数据格式
     var list []UserDetail
     for _, user := range users {
         // 数据转换逻辑
         // ...
     }
-    
+
     return &UserListResp{
         Total: total,
         List:  list,
