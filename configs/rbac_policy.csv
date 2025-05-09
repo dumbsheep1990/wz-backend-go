@@ -1,0 +1,14 @@
+p, admin, *, *
+p, content_manager, /admin/contents, *
+p, content_manager, /admin/categories, *
+p, user_manager, /admin/users, *
+p, tenant_manager, /admin/tenants, *
+p, trade_manager, /admin/orders, *
+p, trade_manager, /admin/refunds, *
+p, trade_manager, /admin/transactions, *
+p, trade_manager, /admin/reports/financial, GET
+p, interaction_manager, /admin/comments, *
+p, interaction_manager, /admin/reports, *
+p, interaction_manager, /admin/likes, *
+p, interaction_manager, /admin/follows, *
+g, super_admin, admin 

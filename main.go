@@ -47,6 +47,11 @@ var services = []ServiceConfig{
 		CmdPath: "./cmd/rpc/interaction/main.go",
 		Args:    []string{"run", "./cmd/rpc/interaction/main.go"},
 	},
+	{
+		Name:    "后台管理服务",
+		CmdPath: "./cmd/admin/main/main.go",
+		Args:    []string{"run", "./cmd/admin/main/main.go"},
+	},
 	// 可根据需要添加更多服务
 }
 
