@@ -1,105 +1,99 @@
 package sql
 
 import (
+	"database/sql"
+	"fmt"
 	"time"
 
-	"wz-backend-go/internal/domain"
+	"github.com/jmoiron/sqlx"
 
-	"github.com/zeromicro/go-zero/core/logx"
-	"github.com/zeromicro/go-zero/core/stores/sqlx"
+	"wz-backend-go/internal/domain"
 )
 
-// UserPointsRepository 用户积分SQL仓储实现
+// UserPointsRepository 用户积分仓储SQL实现
 type UserPointsRepository struct {
-	conn sqlx.SqlConn
+	db *sqlx.DB
 }
 
-// NewUserPointsRepository 创建用户积分仓储实现
-func NewUserPointsRepository(conn sqlx.SqlConn) *UserPointsRepository {
+// NewUserPointsRepository 创建用户积分仓储实例
+func NewUserPointsRepository(db *sqlx.DB) domain.UserPointsRepository {
 	return &UserPointsRepository{
-		conn: conn,
+		db: db,
 	}
 }
 
 // Create 创建用户积分记录
 func (r *UserPointsRepository) Create(points *domain.UserPoints) (int64, error) {
-	// 首先获取用户当前总积分
-	currentTotal, err := r.GetUserTotalPoints(points.UserID)
+	// 开启事务
+	tx, err := r.db.Beginx()
 	if err != nil {
-		logx.Errorf("获取用户当前总积分失败: %v, userID: %d", err, points.UserID)
-		return 0, err
-	}
-
-	// 根据积分变动类型计算新的总积分
-	newTotal := currentTotal
-	if points.Type == 1 { // 增加积分
-		newTotal += points.Points
-	} else if points.Type == 2 { // 减少积分
-		newTotal -= points.Points
-		// 防止总积分变为负数
-		if newTotal < 0 {
-			logx.Warnf("用户积分不足, userID: %d, 当前积分: %d, 尝试扣减: %d", points.UserID, currentTotal, points.Points)
-			return 0, sqlx.ErrNotFound
-		}
-	}
-
-	// 设置总积分
-	points.TotalPoints = newTotal
-
-	// 插入积分记录
-	query := `
-		INSERT INTO user_points (
-			user_id, points, total_points, type, source, description,
-			related_id, related_type, tenant_id, created_at, updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`
-	now := time.Now()
-	points.CreatedAt = now
-	points.UpdatedAt = now
-
-	// 开始数据库事务
-	tx, err := r.conn.Begin()
-	if err != nil {
-		logx.Errorf("开始事务失败: %v", err)
-		return 0, err
+		return 0, fmt.Errorf("开启事务失败: %w", err)
 	}
 	defer func() {
 		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				logx.Errorf("回滚事务失败: %v", rollbackErr)
-			}
+			tx.Rollback()
 		}
 	}()
 
-	// 执行插入操作
-	result, err := tx.Exec(query,
-		points.UserID, points.Points, points.TotalPoints, points.Type,
-		points.Source, points.Description, points.RelatedID,
-		points.RelatedType, points.TenantID, points.CreatedAt, points.UpdatedAt,
-	)
+	// 获取用户当前总积分
+	var currentTotal int
+	query := `SELECT COALESCE(SUM(points), 0) FROM user_points WHERE user_id = ? AND type = 1`
+	err = tx.Get(&currentTotal, query, points.UserID)
 	if err != nil {
-		logx.Errorf("创建用户积分记录失败: %v", err)
-		return 0, err
+		return 0, fmt.Errorf("获取用户积分失败: %w", err)
 	}
 
-	// 更新用户表中的总积分字段（如果有）
-	updateUserPointsQuery := "UPDATE users SET total_points = ? WHERE id = ?"
-	_, err = tx.Exec(updateUserPointsQuery, newTotal, points.UserID)
+	// 获取用户当前总减少积分
+	var currentDecrease int
+	query = `SELECT COALESCE(SUM(points), 0) FROM user_points WHERE user_id = ? AND type = 2`
+	err = tx.Get(&currentDecrease, query, points.UserID)
 	if err != nil {
-		logx.Errorf("更新用户总积分失败: %v, userID: %d", err, points.UserID)
-		return 0, err
+		return 0, fmt.Errorf("获取用户减少积分失败: %w", err)
 	}
 
-	// 提交事务
-	if err = tx.Commit(); err != nil {
-		logx.Errorf("提交事务失败: %v", err)
-		return 0, err
+	// 计算新的总积分
+	newTotal := currentTotal - currentDecrease
+	if points.Type == 1 {
+		// 增加积分
+		newTotal += points.Points
+	} else if points.Type == 2 {
+		// 减少积分
+		newTotal -= points.Points
+		if newTotal < 0 {
+			return 0, fmt.Errorf("用户积分不足")
+		}
+	}
+
+	// 设置记录创建时间和总积分
+	now := time.Now()
+	points.CreatedAt = now
+	points.UpdatedAt = now
+	points.TotalPoints = newTotal
+
+	// 插入积分记录
+	insertQuery := `INSERT INTO user_points (
+        user_id, points, total_points, type, source, 
+        description, related_id, related_type, tenant_id, 
+        created_at, updated_at
+    ) VALUES (
+        :user_id, :points, :total_points, :type, :source, 
+        :description, :related_id, :related_type, :tenant_id, 
+        :created_at, :updated_at
+    )`
+
+	result, err := tx.NamedExec(insertQuery, points)
+	if err != nil {
+		return 0, fmt.Errorf("创建积分记录失败: %w", err)
 	}
 
 	id, err := result.LastInsertId()
 	if err != nil {
-		logx.Errorf("获取新创建积分记录ID失败: %v", err)
-		return 0, err
+		return 0, fmt.Errorf("获取插入ID失败: %w", err)
+	}
+
+	// 提交事务
+	if err = tx.Commit(); err != nil {
+		return 0, fmt.Errorf("提交事务失败: %w", err)
 	}
 
 	return id, nil
@@ -108,16 +102,14 @@ func (r *UserPointsRepository) Create(points *domain.UserPoints) (int64, error) 
 // GetByID 根据ID获取积分记录
 func (r *UserPointsRepository) GetByID(id int64) (*domain.UserPoints, error) {
 	var points domain.UserPoints
-	query := `SELECT 
-		id, user_id, points, total_points, type, source, description, 
-		related_id, related_type, tenant_id, created_at, updated_at
-	FROM user_points 
-	WHERE id = ?`
+	query := `SELECT * FROM user_points WHERE id = ?`
 
-	err := r.conn.QueryRow(&points, query, id)
+	err := r.db.Get(&points, query, id)
 	if err != nil {
-		logx.Errorf("根据ID查询积分记录失败: %v, id: %d", err, id)
-		return nil, err
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("获取积分记录失败: %w", err)
 	}
 
 	return &points, nil
@@ -125,34 +117,22 @@ func (r *UserPointsRepository) GetByID(id int64) (*domain.UserPoints, error) {
 
 // ListByUser 获取用户积分记录列表
 func (r *UserPointsRepository) ListByUser(userID int64, page, pageSize int) ([]*domain.UserPoints, int64, error) {
-	// 查询总数
-	countQuery := "SELECT COUNT(*) FROM user_points WHERE user_id = ?"
+	pointsList := []*domain.UserPoints{}
 	var count int64
-	err := r.conn.QueryRow(&count, countQuery, userID)
+
+	// 查询总数
+	countQuery := `SELECT COUNT(*) FROM user_points WHERE user_id = ?`
+	err := r.db.Get(&count, countQuery, userID)
 	if err != nil {
-		logx.Errorf("查询用户积分记录总数失败: %v", err)
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("统计积分记录数量失败: %w", err)
 	}
 
-	// 计算分页
-	offset := (page - 1) * pageSize
-
 	// 查询列表
-	listQuery := `
-		SELECT 
-			id, user_id, points, total_points, type, source, description, 
-			related_id, related_type, tenant_id, created_at, updated_at
-		FROM user_points 
-		WHERE user_id = ? 
-		ORDER BY created_at DESC
-		LIMIT ? OFFSET ?
-	`
-
-	var pointsList []*domain.UserPoints
-	err = r.conn.QueryRows(&pointsList, listQuery, userID, pageSize, offset)
+	offset := (page - 1) * pageSize
+	listQuery := `SELECT * FROM user_points WHERE user_id = ? ORDER BY id DESC LIMIT ? OFFSET ?`
+	err = r.db.Select(&pointsList, listQuery, userID, pageSize, offset)
 	if err != nil {
-		logx.Errorf("查询用户积分记录列表失败: %v", err)
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("查询积分记录列表失败: %w", err)
 	}
 
 	return pointsList, count, nil
@@ -160,24 +140,27 @@ func (r *UserPointsRepository) ListByUser(userID int64, page, pageSize int) ([]*
 
 // GetUserTotalPoints 获取用户总积分
 func (r *UserPointsRepository) GetUserTotalPoints(userID int64) (int, error) {
-	// 优先从users表获取（更高效）
-	var totalPoints int
-	userQuery := "SELECT total_points FROM users WHERE id = ?"
-	err := r.conn.QueryRow(&totalPoints, userQuery, userID)
-	if err == nil {
-		return totalPoints, nil
+	// 获取用户总增加积分
+	var totalIncrease int
+	query := `SELECT COALESCE(SUM(points), 0) FROM user_points WHERE user_id = ? AND type = 1`
+	err := r.db.Get(&totalIncrease, query, userID)
+	if err != nil {
+		return 0, fmt.Errorf("获取用户增加积分失败: %w", err)
 	}
 
-	// 如果从用户表获取失败，则从积分记录表计算
-	calcQuery := "SELECT IFNULL(MAX(total_points), 0) FROM user_points WHERE user_id = ? ORDER BY id DESC LIMIT 1"
-	err = r.conn.QueryRow(&totalPoints, calcQuery, userID)
+	// 获取用户总减少积分
+	var totalDecrease int
+	query = `SELECT COALESCE(SUM(points), 0) FROM user_points WHERE user_id = ? AND type = 2`
+	err = r.db.Get(&totalDecrease, query, userID)
 	if err != nil {
-		// 如果没有找到记录，默认为0积分
-		if err == sqlx.ErrNotFound {
-			return 0, nil
-		}
-		logx.Errorf("计算用户总积分失败: %v, userID: %d", err, userID)
-		return 0, err
+		return 0, fmt.Errorf("获取用户减少积分失败: %w", err)
+	}
+
+	// 计算总积分
+	totalPoints := totalIncrease - totalDecrease
+	if totalPoints < 0 {
+		// 积分不应该为负数
+		return 0, nil
 	}
 
 	return totalPoints, nil

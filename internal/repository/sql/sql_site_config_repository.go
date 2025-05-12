@@ -1,128 +1,95 @@
 package sql
 
 import (
+	"database/sql"
+	"fmt"
 	"time"
 
-	"wz-backend-go/internal/domain"
+	"github.com/jmoiron/sqlx"
 
-	"github.com/zeromicro/go-zero/core/logx"
-	"github.com/zeromicro/go-zero/core/stores/sqlx"
+	"wz-backend-go/internal/domain"
 )
 
-// SiteConfigRepository 站点配置SQL仓储实现
+// SiteConfigRepository SQL实现
 type SiteConfigRepository struct {
-	conn sqlx.SqlConn
+	db *sqlx.DB
 }
 
-// NewSiteConfigRepository 创建站点配置仓储实现
-func NewSiteConfigRepository(conn sqlx.SqlConn) *SiteConfigRepository {
+// NewSiteConfigRepository 创建站点配置仓储实例
+func NewSiteConfigRepository(db *sqlx.DB) domain.SiteConfigRepository {
 	return &SiteConfigRepository{
-		conn: conn,
+		db: db,
 	}
 }
 
 // GetSiteConfig 获取站点配置
 func (r *SiteConfigRepository) GetSiteConfig(tenantID int64) (*domain.SiteConfig, error) {
 	var config domain.SiteConfig
-	query := `
-		SELECT 
-			id, site_name, site_logo, seo_title, seo_keywords, 
-			seo_description, icp_number, copyright, theme_id, 
-			contact_email, contact_phone, address, tenant_id, 
-			created_at, updated_at
-		FROM site_configs 
-		WHERE tenant_id = ?
-		LIMIT 1
-	`
 
-	err := r.conn.QueryRow(&config, query, tenantID)
+	query := `SELECT * FROM site_configs WHERE tenant_id = ? LIMIT 1`
+	err := r.db.Get(&config, query, tenantID)
 	if err != nil {
-		// 如果没有找到记录，创建一个默认配置
-		if err == sqlx.ErrNotFound {
-			logx.Infof("未找到租户(%d)的站点配置，将创建默认配置", tenantID)
-			defaultConfig := &domain.SiteConfig{
-				SiteName:       "默认站点名称",
-				SeoTitle:       "默认SEO标题",
-				SeoKeywords:    "默认关键词",
-				SeoDescription: "默认网站描述",
-				Copyright:      "版权所有 © " + time.Now().Format("2006"),
-				TenantID:       tenantID,
-				CreatedAt:      time.Now(),
-				UpdatedAt:      time.Now(),
-			}
-
-			// 插入默认配置
-			id, insertErr := r.createSiteConfig(defaultConfig)
-			if insertErr != nil {
-				logx.Errorf("创建默认站点配置失败: %v", insertErr)
-				return nil, insertErr
-			}
-
-			defaultConfig.ID = id
-			return defaultConfig, nil
+		if err == sql.ErrNoRows {
+			// 如果没有配置，返回默认配置
+			return &domain.SiteConfig{
+				SiteName:    "默认站点",
+				SeoTitle:    "默认站点",
+				SeoKeywords: "默认站点,默认关键词",
+				TenantID:    tenantID,
+				CreatedAt:   time.Now(),
+				UpdatedAt:   time.Now(),
+			}, nil
 		}
-
-		logx.Errorf("获取站点配置失败: %v, tenantID: %d", err, tenantID)
-		return nil, err
+		return nil, fmt.Errorf("获取站点配置失败: %w", err)
 	}
 
 	return &config, nil
 }
 
-// createSiteConfig 创建站点配置（内部方法）
-func (r *SiteConfigRepository) createSiteConfig(config *domain.SiteConfig) (int64, error) {
-	query := `
-		INSERT INTO site_configs (
-			site_name, site_logo, seo_title, seo_keywords, seo_description,
-			icp_number, copyright, theme_id, contact_email, contact_phone,
-			address, tenant_id, created_at, updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`
-	now := time.Now()
-	config.CreatedAt = now
-	config.UpdatedAt = now
-
-	result, err := r.conn.Exec(query,
-		config.SiteName, config.SiteLogo, config.SeoTitle, config.SeoKeywords,
-		config.SeoDescription, config.IcpNumber, config.Copyright, config.ThemeID,
-		config.ContactEmail, config.ContactPhone, config.Address, config.TenantID,
-		config.CreatedAt, config.UpdatedAt,
-	)
-	if err != nil {
-		logx.Errorf("创建站点配置失败: %v", err)
-		return 0, err
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		logx.Errorf("获取新创建站点配置ID失败: %v", err)
-		return 0, err
-	}
-
-	return id, nil
-}
-
 // UpdateSiteConfig 更新站点配置
 func (r *SiteConfigRepository) UpdateSiteConfig(config *domain.SiteConfig) error {
-	query := `
-		UPDATE site_configs SET
-			site_name = ?, site_logo = ?, seo_title = ?, seo_keywords = ?,
-			seo_description = ?, icp_number = ?, copyright = ?, theme_id = ?,
-			contact_email = ?, contact_phone = ?, address = ?, updated_at = ?
-		WHERE id = ? AND tenant_id = ?
-	`
-	now := time.Now()
-	config.UpdatedAt = now
+	var exists bool
+	err := r.db.Get(&exists, "SELECT 1 FROM site_configs WHERE tenant_id = ? LIMIT 1", config.TenantID)
 
-	_, err := r.conn.Exec(query,
-		config.SiteName, config.SiteLogo, config.SeoTitle, config.SeoKeywords,
-		config.SeoDescription, config.IcpNumber, config.Copyright, config.ThemeID,
-		config.ContactEmail, config.ContactPhone, config.Address, now,
-		config.ID, config.TenantID,
-	)
-	if err != nil {
-		logx.Errorf("更新站点配置失败: %v, id: %d", err, config.ID)
-		return err
+	config.UpdatedAt = time.Now()
+
+	if err == sql.ErrNoRows {
+		// 如果配置不存在，则创建
+		config.CreatedAt = time.Now()
+		query := `INSERT INTO site_configs (
+            site_name, site_logo, seo_title, seo_keywords, seo_description, 
+            icp_number, copyright, theme_id, contact_email, contact_phone, 
+            address, tenant_id, created_at, updated_at
+        ) VALUES (
+            :site_name, :site_logo, :seo_title, :seo_keywords, :seo_description, 
+            :icp_number, :copyright, :theme_id, :contact_email, :contact_phone, 
+            :address, :tenant_id, :created_at, :updated_at
+        )`
+		_, err := r.db.NamedExec(query, config)
+		if err != nil {
+			return fmt.Errorf("创建站点配置失败: %w", err)
+		}
+	} else {
+		// 如果配置存在，则更新
+		query := `UPDATE site_configs SET 
+            site_name = :site_name,
+            site_logo = :site_logo,
+            seo_title = :seo_title,
+            seo_keywords = :seo_keywords,
+            seo_description = :seo_description,
+            icp_number = :icp_number,
+            copyright = :copyright,
+            theme_id = :theme_id,
+            contact_email = :contact_email,
+            contact_phone = :contact_phone,
+            address = :address,
+            updated_at = :updated_at
+        WHERE tenant_id = :tenant_id`
+
+		_, err := r.db.NamedExec(query, config)
+		if err != nil {
+			return fmt.Errorf("更新站点配置失败: %w", err)
+		}
 	}
 
 	return nil

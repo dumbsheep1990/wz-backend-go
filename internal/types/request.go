@@ -136,3 +136,99 @@ type StatisticsRequest struct {
 	StartDate string `form:"startDate"`
 	EndDate   string `form:"endDate"`
 }
+
+// 用户积分相关请求
+
+// CreateUserPointsRequest 创建用户积分请求
+type CreateUserPointsRequest struct {
+	UserID      int64  `json:"user_id"`      // 用户ID
+	Points      int    `json:"points"`       // 积分值
+	Type        int    `json:"type"`         // 类型（1增加，2减少）
+	Source      string `json:"source"`       // 来源
+	Description string `json:"description"`  // 描述
+	RelatedID   int64  `json:"related_id"`   // 关联ID
+	RelatedType string `json:"related_type"` // 关联类型
+}
+
+// ListUserPointsRequest 获取用户积分列表请求
+type ListUserPointsRequest struct {
+	UserID   int64 `json:"user_id"`   // 用户ID
+	Page     int   `json:"page"`      // 页码
+	PageSize int   `json:"page_size"` // 每页数量
+	Type     int   `json:"type"`      // 类型过滤（1增加，2减少）
+	TenantID int64 `json:"tenant_id"` // 租户ID
+}
+
+// 用户收藏相关请求
+
+// CreateUserFavoriteRequest 创建用户收藏请求
+type CreateUserFavoriteRequest struct {
+	UserID   int64  `json:"user_id"`   // 用户ID
+	ItemID   int64  `json:"item_id"`   // 内容ID
+	ItemType string `json:"item_type"` // 内容类型
+	Title    string `json:"title"`     // 标题
+	Cover    string `json:"cover"`     // 封面图
+	Summary  string `json:"summary"`   // 内容摘要
+	URL      string `json:"url"`       // 链接地址
+	Remark   string `json:"remark"`    // 备注
+}
+
+// ListUserFavoritesRequest 获取用户收藏列表请求
+type ListUserFavoritesRequest struct {
+	UserID   int64  `json:"user_id"`   // 用户ID
+	Page     int    `json:"page"`      // 页码
+	PageSize int    `json:"page_size"` // 每页数量
+	ItemType string `json:"item_type"` // 项目类型过滤
+	TenantID int64  `json:"tenant_id"` // 租户ID
+}
+
+// ListPointsRequest 获取积分列表请求
+type ListPointsRequest struct {
+	Page      int64  `json:"page"`       // 当前页码
+	PageSize  int64  `json:"page_size"`  // 每页大小
+	UserID    int64  `json:"user_id"`    // 用户ID
+	Username  string `json:"username"`   // 用户名
+	Type      int    `json:"type"`       // 积分类型
+	Source    string `json:"source"`     // 积分来源
+	StartDate string `json:"start_date"` // 开始日期
+	EndDate   string `json:"end_date"`   // 结束日期
+}
+
+// ListFavoritesRequest 获取收藏列表请求
+type ListFavoritesRequest struct {
+	Page      int64  `json:"page"`       // 当前页码
+	PageSize  int64  `json:"page_size"`  // 每页大小
+	UserID    int64  `json:"user_id"`    // 用户ID
+	Username  string `json:"username"`   // 用户名
+	Title     string `json:"title"`      // 标题
+	ItemType  string `json:"item_type"`  // 内容类型
+	StartDate string `json:"start_date"` // 开始日期
+	EndDate   string `json:"end_date"`   // 结束日期
+}
+
+// AdminAddPointsRequest 管理员添加/调整积分请求
+type AdminAddPointsRequest struct {
+	UserID      int64  `json:"user_id" binding:"required"`        // 用户ID
+	Points      int    `json:"points" binding:"required,gt=0"`    // 积分值
+	Type        int    `json:"type" binding:"required,oneof=1 2"` // 类型（1增加，2减少）
+	Description string `json:"description" binding:"required"`    // 描述
+}
+
+// BatchDeleteFavoritesRequest 批量删除收藏请求
+type BatchDeleteFavoritesRequest struct {
+	IDs []int64 `json:"ids" binding:"required"` // 收藏ID列表
+}
+
+// PointsRulesRequest 积分规则设置请求
+type PointsRulesRequest struct {
+	SignInPoints      int  `json:"sign_in_points"`      // 签到积分
+	CommentPoints     int  `json:"comment_points"`      // 评论积分
+	SharePoints       int  `json:"share_points"`        // 分享积分
+	ArticlePoints     int  `json:"article_points"`      // 发布文章积分
+	InvitePoints      int  `json:"invite_points"`       // 邀请积分
+	PurchaseRate      int  `json:"purchase_rate"`       // 购买积分比例
+	MaxDailyPoints    int  `json:"max_daily_points"`    // 每日最大获取积分
+	EnableExchange    bool `json:"enable_exchange"`     // 是否可兑换商品
+	ExchangeRate      int  `json:"exchange_rate"`       // 兑换比例
+	MinExchangePoints int  `json:"min_exchange_points"` // 最小兑换积分
+}

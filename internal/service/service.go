@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"wz-backend-go/internal/domain"
+	"wz-backend-go/internal/types"
 )
 
 // LinkService 友情链接服务接口
@@ -46,18 +47,32 @@ type UserMessageService interface {
 // UserPointsService 用户积分服务接口
 type UserPointsService interface {
 	CreatePoints(points *domain.UserPoints) (int64, error)
-	GetPointsById(id int64) (*domain.UserPoints, error)
-	ListPointsByUser(userID int64, page, pageSize int) ([]*domain.UserPoints, int64, error)
-	GetUserTotalPoints(userID int64) (int, error)
+	GetPointByID(id int64) (*domain.UserPoints, error)
+	GetTotalPointsByUserID(userID int64) (int, error)
+	ListPointsByUserID(userID int64, page, pageSize int64) ([]*domain.UserPoints, error)
+	CountPointsByUserID(userID int64) (int64, error)
+	ListPointsWithTotal(req *types.ListPointsRequest) ([]*domain.UserPoints, int64, error)
+	DeletePoint(id int64) error
+	ExportPointsData(req *types.ListPointsRequest) ([]byte, error)
+	GetPointsStatistics() (*types.PointsStatisticsResponse, error)
+	GetPointsRules() (*types.PointsRulesResponse, error)
+	UpdatePointsRules(req *types.PointsRulesRequest) error
 }
 
 // UserFavoriteService 用户收藏服务接口
 type UserFavoriteService interface {
 	CreateFavorite(favorite *domain.UserFavorite) (int64, error)
-	GetFavoriteById(id int64) (*domain.UserFavorite, error)
-	ListFavoritesByUser(userID int64, page, pageSize int, itemType string) ([]*domain.UserFavorite, int64, error)
-	DeleteFavorite(id int64, userID int64) error
+	GetFavoriteByID(id int64) (*domain.UserFavorite, error)
+	ListFavoritesWithTotal(req *types.ListFavoritesRequest) ([]*domain.UserFavorite, int64, error)
+	DeleteFavorite(id int64) error
+	BatchDeleteFavorites(ids []int64) error
 	CheckFavorite(userID int64, itemID int64, itemType string) (bool, error)
+	ExportFavoritesData(req *types.ListFavoritesRequest) ([]byte, error)
+
+	// 统计相关方法
+	GetFavoritesStatistics() (*types.FavoritesStatisticsResponse, error)
+	GetHotContent() ([]*types.HotContentResponse, error)
+	GetFavoritesTrend(period string) ([]*types.TrendDataResponse, error)
 }
 
 // StatisticsService 统计服务接口

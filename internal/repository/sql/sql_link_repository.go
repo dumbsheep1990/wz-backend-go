@@ -1,52 +1,45 @@
 package sql
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 	"time"
 
-	"wz-backend-go/internal/domain"
+	"github.com/jmoiron/sqlx"
 
-	"github.com/zeromicro/go-zero/core/logx"
-	"github.com/zeromicro/go-zero/core/stores/sqlx"
+	"wz-backend-go/internal/domain"
 )
 
 // LinkRepository 友情链接SQL仓储实现
 type LinkRepository struct {
-	conn sqlx.SqlConn
+	db *sqlx.DB
 }
 
 // NewLinkRepository 创建友情链接仓储实现
-func NewLinkRepository(conn sqlx.SqlConn) *LinkRepository {
+func NewLinkRepository(db *sqlx.DB) domain.LinkRepository {
 	return &LinkRepository{
-		conn: conn,
+		db: db,
 	}
 }
 
 // Create 创建友情链接
 func (r *LinkRepository) Create(link *domain.Link) (int64, error) {
-	query := `
-		INSERT INTO links (
-			name, url, logo, sort, status, description, tenant_id, created_at, updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`
 	now := time.Now()
 	link.CreatedAt = now
 	link.UpdatedAt = now
 
-	result, err := r.conn.Exec(query,
-		link.Name, link.URL, link.Logo, link.Sort, link.Status,
-		link.Description, link.TenantID, link.CreatedAt, link.UpdatedAt,
-	)
+	query := `INSERT INTO links (name, url, logo, sort, status, description, tenant_id, created_at, updated_at) 
+              VALUES (:name, :url, :logo, :sort, :status, :description, :tenant_id, :created_at, :updated_at)`
+
+	result, err := r.db.NamedExec(query, link)
 	if err != nil {
-		logx.Errorf("创建友情链接失败: %v", err)
-		return 0, err
+		return 0, fmt.Errorf("创建友情链接失败: %w", err)
 	}
 
 	id, err := result.LastInsertId()
 	if err != nil {
-		logx.Errorf("获取新创建友情链接ID失败: %v", err)
-		return 0, err
+		return 0, fmt.Errorf("获取插入ID失败: %w", err)
 	}
 
 	return id, nil
@@ -55,15 +48,14 @@ func (r *LinkRepository) Create(link *domain.Link) (int64, error) {
 // GetByID 根据ID获取友情链接
 func (r *LinkRepository) GetByID(id int64) (*domain.Link, error) {
 	var link domain.Link
-	query := `SELECT 
-		id, name, url, logo, sort, status, description, tenant_id, created_at, updated_at
-	FROM links 
-	WHERE id = ?`
+	query := `SELECT * FROM links WHERE id = ?`
 
-	err := r.conn.QueryRow(&link, query, id)
+	err := r.db.Get(&link, query, id)
 	if err != nil {
-		logx.Errorf("根据ID查询友情链接失败: %v, id: %d", err, id)
-		return nil, err
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("获取友情链接失败: %w", err)
 	}
 
 	return &link, nil
@@ -71,54 +63,49 @@ func (r *LinkRepository) GetByID(id int64) (*domain.Link, error) {
 
 // List 获取友情链接列表
 func (r *LinkRepository) List(page, pageSize int, query map[string]interface{}) ([]*domain.Link, int64, error) {
+	links := []*domain.Link{}
+	var count int64
+
 	// 构建查询条件
-	whereClause := "1=1"
+	conditions := []string{}
 	args := []interface{}{}
 
-	// 动态添加查询条件
-	if query != nil {
-		if name, ok := query["name"].(string); ok && name != "" {
-			whereClause += " AND name LIKE ?"
-			args = append(args, fmt.Sprintf("%%%s%%", name))
-		}
-		if status, ok := query["status"].(int); ok {
-			whereClause += " AND status = ?"
-			args = append(args, status)
-		}
-		if tenantID, ok := query["tenant_id"].(int64); ok && tenantID > 0 {
-			whereClause += " AND tenant_id = ?"
-			args = append(args, tenantID)
-		}
+	if tenantID, ok := query["tenant_id"]; ok {
+		conditions = append(conditions, "tenant_id = ?")
+		args = append(args, tenantID)
+	}
+
+	if status, ok := query["status"]; ok {
+		conditions = append(conditions, "status = ?")
+		args = append(args, status)
+	}
+
+	if name, ok := query["name"]; ok && name != "" {
+		conditions = append(conditions, "name LIKE ?")
+		args = append(args, "%"+name.(string)+"%")
+	}
+
+	// 构建WHERE子句
+	whereClause := ""
+	if len(conditions) > 0 {
+		whereClause = "WHERE " + strings.Join(conditions, " AND ")
 	}
 
 	// 查询总数
-	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM links WHERE %s", whereClause)
-	var count int64
-	err := r.conn.QueryRow(&count, countQuery, args...)
+	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM links %s", whereClause)
+	err := r.db.Get(&count, countQuery, args...)
 	if err != nil {
-		logx.Errorf("查询友情链接总数失败: %v", err)
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("统计友情链接数量失败: %w", err)
 	}
 
-	// 计算分页
-	offset := (page - 1) * pageSize
-
 	// 查询列表
-	listQuery := fmt.Sprintf(`
-		SELECT 
-			id, name, url, logo, sort, status, description, tenant_id, created_at, updated_at
-		FROM links 
-		WHERE %s 
-		ORDER BY sort ASC, id DESC
-		LIMIT ? OFFSET ?
-	`, whereClause)
-
+	offset := (page - 1) * pageSize
+	listQuery := fmt.Sprintf("SELECT * FROM links %s ORDER BY sort ASC, id DESC LIMIT ? OFFSET ?", whereClause)
 	args = append(args, pageSize, offset)
-	var links []*domain.Link
-	err = r.conn.QueryRows(&links, listQuery, args...)
+
+	err = r.db.Select(&links, listQuery, args...)
 	if err != nil {
-		logx.Errorf("查询友情链接列表失败: %v", err)
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("查询友情链接列表失败: %w", err)
 	}
 
 	return links, count, nil
@@ -126,52 +113,21 @@ func (r *LinkRepository) List(page, pageSize int, query map[string]interface{}) 
 
 // Update 更新友情链接
 func (r *LinkRepository) Update(link *domain.Link) error {
-	// 构建动态更新SQL
-	var setValues []string
-	var args []interface{}
+	link.UpdatedAt = time.Now()
 
-	// 只更新非空字段
-	if link.Name != "" {
-		setValues = append(setValues, "name = ?")
-		args = append(args, link.Name)
-	}
+	query := `UPDATE links SET 
+                name = :name, 
+                url = :url, 
+                logo = :logo, 
+                sort = :sort, 
+                status = :status, 
+                description = :description, 
+                updated_at = :updated_at 
+              WHERE id = :id`
 
-	if link.URL != "" {
-		setValues = append(setValues, "url = ?")
-		args = append(args, link.URL)
-	}
-
-	if link.Logo != "" {
-		setValues = append(setValues, "logo = ?")
-		args = append(args, link.Logo)
-	}
-
-	// 排序和状态字段可以为0，需要特殊处理
-	setValues = append(setValues, "sort = ?")
-	args = append(args, link.Sort)
-
-	setValues = append(setValues, "status = ?")
-	args = append(args, link.Status)
-
-	if link.Description != "" {
-		setValues = append(setValues, "description = ?")
-		args = append(args, link.Description)
-	}
-
-	// 更新时间始终更新
-	now := time.Now()
-	setValues = append(setValues, "updated_at = ?")
-	args = append(args, now)
-
-	// 构建更新语句
-	query := fmt.Sprintf("UPDATE links SET %s WHERE id = ?", strings.Join(setValues, ", "))
-	args = append(args, link.ID)
-
-	// 执行更新
-	_, err := r.conn.Exec(query, args...)
+	_, err := r.db.NamedExec(query, link)
 	if err != nil {
-		logx.Errorf("更新友情链接失败: %v, id: %d", err, link.ID)
-		return err
+		return fmt.Errorf("更新友情链接失败: %w", err)
 	}
 
 	return nil
@@ -179,11 +135,10 @@ func (r *LinkRepository) Update(link *domain.Link) error {
 
 // Delete 删除友情链接
 func (r *LinkRepository) Delete(id int64) error {
-	query := "DELETE FROM links WHERE id = ?"
-	_, err := r.conn.Exec(query, id)
+	query := `DELETE FROM links WHERE id = ?`
+	_, err := r.db.Exec(query, id)
 	if err != nil {
-		logx.Errorf("删除友情链接失败: %v, id: %d", err, id)
-		return err
+		return fmt.Errorf("删除友情链接失败: %w", err)
 	}
 
 	return nil

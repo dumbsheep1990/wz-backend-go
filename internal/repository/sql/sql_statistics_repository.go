@@ -1,211 +1,217 @@
 package sql
 
 import (
+	"fmt"
 	"time"
 
-	"wz-backend-go/internal/domain"
+	"github.com/jmoiron/sqlx"
 
-	"github.com/zeromicro/go-zero/core/logx"
-	"github.com/zeromicro/go-zero/core/stores/sqlx"
+	"wz-backend-go/internal/domain"
 )
 
-// StatisticsRepository 统计数据SQL仓储实现
+// StatisticsRepository 统计仓储SQL实现
 type StatisticsRepository struct {
-	conn sqlx.SqlConn
+	db *sqlx.DB
 }
 
-// NewStatisticsRepository 创建统计数据仓储实现
-func NewStatisticsRepository(conn sqlx.SqlConn) *StatisticsRepository {
+// NewStatisticsRepository 创建统计仓储实例
+func NewStatisticsRepository(db *sqlx.DB) domain.StatisticsRepository {
 	return &StatisticsRepository{
-		conn: conn,
+		db: db,
 	}
 }
 
 // RecordStatistics 记录统计数据
 func (r *StatisticsRepository) RecordStatistics(data *domain.StatisticsData) error {
-	// 检查是否已存在，避免重复记录
-	checkQuery := `
-		SELECT id FROM statistics 
-		WHERE date = ? AND type = ? AND tenant_id = ?
-	`
-	if data.ItemID > 0 {
-		checkQuery += " AND item_id = ? AND item_type = ?"
-	} else {
-		checkQuery += " AND item_id = 0"
+	// 检查是否已经存在当天的数据
+	var exists bool
+	var existingID int64
+	checkQuery := `SELECT EXISTS(SELECT 1 FROM statistics_data 
+        WHERE date = DATE(?) AND type = ? AND item_id = ? AND item_type = ? AND tenant_id = ?)`
+
+	err := r.db.Get(&exists, checkQuery,
+		data.Date, data.Type, data.ItemID, data.ItemType, data.TenantID)
+	if err != nil {
+		return fmt.Errorf("检查统计数据失败: %w", err)
 	}
-
-	var id int64
-	var err error
-	var args []interface{}
-
-	args = append(args, data.Date, data.Type, data.TenantID)
-	if data.ItemID > 0 {
-		args = append(args, data.ItemID, data.ItemType)
-	}
-
-	err = r.conn.QueryRow(&id, checkQuery, args...)
 
 	now := time.Now()
 
-	// 如果找到记录，更新value累加
-	if err == nil {
-		updateQuery := "UPDATE statistics SET value = value + ?, updated_at = ? WHERE id = ?"
-		_, err = r.conn.Exec(updateQuery, data.Value, now, id)
+	if exists {
+		// 如果存在则更新
+		idQuery := `SELECT id, value FROM statistics_data 
+            WHERE date = DATE(?) AND type = ? AND item_id = ? AND item_type = ? AND tenant_id = ?
+            LIMIT 1`
+
+		var currentValue int64
+		err = r.db.QueryRow(idQuery,
+			data.Date, data.Type, data.ItemID, data.ItemType, data.TenantID).Scan(&existingID, &currentValue)
 		if err != nil {
-			logx.Errorf("更新统计数据失败: %v, id: %d", err, id)
-			return err
+			return fmt.Errorf("获取现有统计数据失败: %w", err)
 		}
-		return nil
-	}
 
-	// 如果没有记录，则插入新记录
-	if err == sqlx.ErrNotFound {
-		query := `
-			INSERT INTO statistics (
-				date, type, value, item_id, item_type, tenant_id, created_at, updated_at
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-		`
-
+		updateQuery := `UPDATE statistics_data SET value = value + ?, updated_at = ? WHERE id = ?`
+		_, err = r.db.Exec(updateQuery, data.Value, now, existingID)
+		if err != nil {
+			return fmt.Errorf("更新统计数据失败: %w", err)
+		}
+	} else {
+		// 否则插入新记录
 		data.CreatedAt = now
 		data.UpdatedAt = now
 
-		_, err = r.conn.Exec(query,
-			data.Date, data.Type, data.Value, data.ItemID,
-			data.ItemType, data.TenantID, data.CreatedAt, data.UpdatedAt,
-		)
+		insertQuery := `INSERT INTO statistics_data (
+            date, type, value, item_id, item_type, tenant_id, created_at, updated_at
+        ) VALUES (
+            :date, :type, :value, :item_id, :item_type, :tenant_id, :created_at, :updated_at
+        )`
+
+		_, err = r.db.NamedExec(insertQuery, data)
 		if err != nil {
-			logx.Errorf("插入统计数据失败: %v", err)
-			return err
+			return fmt.Errorf("插入统计数据失败: %w", err)
 		}
-		return nil
 	}
 
-	// 其他错误
-	logx.Errorf("检查统计数据记录失败: %v", err)
-	return err
+	return nil
 }
 
 // GetOverview 获取概览数据
 func (r *StatisticsRepository) GetOverview(tenantID int64) (*domain.OverviewData, error) {
-	var overview domain.OverviewData
-
-	// 获取总用户数
-	userCountQuery := "SELECT COUNT(*) FROM users WHERE tenant_id = ?"
-	err := r.conn.QueryRow(&overview.TotalUsers, userCountQuery, tenantID)
-	if err != nil {
-		logx.Errorf("获取总用户数失败: %v", err)
-		return nil, err
-	}
-
-	// 获取总内容数
-	contentCountQuery := "SELECT COUNT(*) FROM contents WHERE tenant_id = ?"
-	err = r.conn.QueryRow(&overview.TotalContent, contentCountQuery, tenantID)
-	if err != nil {
-		logx.Errorf("获取总内容数失败: %v", err)
-		return nil, err
-	}
-
-	// 获取总PV
-	pvQuery := "SELECT IFNULL(SUM(value), 0) FROM statistics WHERE type = 'pv' AND tenant_id = ?"
-	err = r.conn.QueryRow(&overview.TotalPV, pvQuery, tenantID)
-	if err != nil {
-		logx.Errorf("获取总PV失败: %v", err)
-		return nil, err
-	}
-
-	// 获取总UV
-	uvQuery := "SELECT IFNULL(SUM(value), 0) FROM statistics WHERE type = 'uv' AND tenant_id = ?"
-	err = r.conn.QueryRow(&overview.TotalUV, uvQuery, tenantID)
-	if err != nil {
-		logx.Errorf("获取总UV失败: %v", err)
-		return nil, err
-	}
-
-	// 今日日期
+	overview := &domain.OverviewData{}
 	today := time.Now().Format("2006-01-02")
 
-	// 获取今日PV
-	todayPVQuery := "SELECT IFNULL(SUM(value), 0) FROM statistics WHERE type = 'pv' AND date = ? AND tenant_id = ?"
-	err = r.conn.QueryRow(&overview.TodayPV, todayPVQuery, today, tenantID)
+	// 查询总用户数
+	userQuery := `SELECT COUNT(*) FROM users WHERE tenant_id = ?`
+	err := r.db.Get(&overview.TotalUsers, userQuery, tenantID)
 	if err != nil {
-		logx.Errorf("获取今日PV失败: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("查询用户总数失败: %w", err)
 	}
 
-	// 获取今日UV
-	todayUVQuery := "SELECT IFNULL(SUM(value), 0) FROM statistics WHERE type = 'uv' AND date = ? AND tenant_id = ?"
-	err = r.conn.QueryRow(&overview.TodayUV, todayUVQuery, today, tenantID)
+	// 查询总内容数
+	contentQuery := `SELECT COUNT(*) FROM content WHERE tenant_id = ?`
+	err = r.db.Get(&overview.TotalContent, contentQuery, tenantID)
 	if err != nil {
-		logx.Errorf("获取今日UV失败: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("查询内容总数失败: %w", err)
 	}
 
-	// 获取今日新增用户
-	todayNewUsersQuery := "SELECT COUNT(*) FROM users WHERE DATE(created_at) = ? AND tenant_id = ?"
-	err = r.conn.QueryRow(&overview.TodayNewUsers, todayNewUsersQuery, today, tenantID)
+	// 查询总PV
+	pvQuery := `SELECT COALESCE(SUM(value), 0) FROM statistics_data 
+        WHERE type = 'pv' AND tenant_id = ?`
+	err = r.db.Get(&overview.TotalPV, pvQuery, tenantID)
 	if err != nil {
-		logx.Errorf("获取今日新增用户失败: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("查询总PV失败: %w", err)
 	}
 
-	// 获取今日新增内容
-	todayNewContentQuery := "SELECT COUNT(*) FROM contents WHERE DATE(created_at) = ? AND tenant_id = ?"
-	err = r.conn.QueryRow(&overview.TodayNewContent, todayNewContentQuery, today, tenantID)
+	// 查询总UV
+	uvQuery := `SELECT COALESCE(SUM(value), 0) FROM statistics_data 
+        WHERE type = 'uv' AND tenant_id = ?`
+	err = r.db.Get(&overview.TotalUV, uvQuery, tenantID)
 	if err != nil {
-		logx.Errorf("获取今日新增内容失败: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("查询总UV失败: %w", err)
 	}
 
-	return &overview, nil
+	// 查询今日PV
+	todayPVQuery := `SELECT COALESCE(SUM(value), 0) FROM statistics_data 
+        WHERE type = 'pv' AND date = ? AND tenant_id = ?`
+	err = r.db.Get(&overview.TodayPV, todayPVQuery, today, tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("查询今日PV失败: %w", err)
+	}
+
+	// 查询今日UV
+	todayUVQuery := `SELECT COALESCE(SUM(value), 0) FROM statistics_data 
+        WHERE type = 'uv' AND date = ? AND tenant_id = ?`
+	err = r.db.Get(&overview.TodayUV, todayUVQuery, today, tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("查询今日UV失败: %w", err)
+	}
+
+	// 查询今日新增用户
+	todayUserQuery := `SELECT COUNT(*) FROM users 
+        WHERE DATE(created_at) = ? AND tenant_id = ?`
+	err = r.db.Get(&overview.TodayNewUsers, todayUserQuery, today, tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("查询今日新增用户失败: %w", err)
+	}
+
+	// 查询今日新增内容
+	todayContentQuery := `SELECT COUNT(*) FROM content 
+        WHERE DATE(created_at) = ? AND tenant_id = ?`
+	err = r.db.Get(&overview.TodayNewContent, todayContentQuery, today, tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("查询今日新增内容失败: %w", err)
+	}
+
+	return overview, nil
 }
 
-// GetStatisticsByType 获取特定类型的统计数据
+// GetStatisticsByType 根据类型获取统计数据
 func (r *StatisticsRepository) GetStatisticsByType(tenantID int64, type_ string, startDate, endDate time.Time) ([]*domain.StatisticsData, error) {
-	query := `
-		SELECT 
-			id, date, type, value, item_id, item_type, 
-			tenant_id, created_at, updated_at
-		FROM statistics 
-		WHERE type = ? AND tenant_id = ? AND date BETWEEN ? AND ?
-		ORDER BY date ASC
-	`
+	statsList := []*domain.StatisticsData{}
 
-	var stats []*domain.StatisticsData
-	err := r.conn.QueryRows(&stats, query, type_, tenantID, startDate, endDate)
+	query := `SELECT * FROM statistics_data 
+        WHERE type = ? AND tenant_id = ? AND date BETWEEN ? AND ? 
+        ORDER BY date ASC`
+
+	err := r.db.Select(&statsList, query, type_, tenantID, startDate.Format("2006-01-02"), endDate.Format("2006-01-02"))
 	if err != nil {
-		logx.Errorf("获取统计数据失败: %v, type: %s", err, type_)
-		return nil, err
+		return nil, fmt.Errorf("查询统计数据失败: %w", err)
 	}
 
-	return stats, nil
+	return statsList, nil
 }
 
 // GetContentRanking 获取内容排行榜
 func (r *StatisticsRepository) GetContentRanking(tenantID int64, limit int) ([]*domain.ContentRankingItem, error) {
-	// 首先查询访问量最高的内容ID
-	query := `
-		SELECT 
-			s.item_id as id,
-			c.title,
-			c.cover,
-			c.type,
-			IFNULL(SUM(CASE WHEN s.type = 'content_view' THEN s.value ELSE 0 END), 0) as view_count,
-			IFNULL(SUM(CASE WHEN s.type = 'content_like' THEN s.value ELSE 0 END), 0) as like_count,
-			CONCAT('/content/', c.id) as url
-		FROM statistics s
-		JOIN contents c ON s.item_id = c.id
-		WHERE s.tenant_id = ? AND s.item_type = 'content' AND c.status = 1
-		GROUP BY s.item_id, c.title, c.cover, c.type
-		ORDER BY view_count DESC
-		LIMIT ?
-	`
+	rankingList := []*domain.ContentRankingItem{}
 
-	var ranking []*domain.ContentRankingItem
-	err := r.conn.QueryRows(&ranking, query, tenantID, limit)
+	// 查询浏览量排行
+	query := `
+        SELECT 
+            c.id, 
+            c.title, 
+            c.cover, 
+            c.type, 
+            COALESCE(view_stats.total_views, 0) as view_count,
+            COALESCE(like_stats.total_likes, 0) as like_count,
+            c.url
+        FROM 
+            content c
+        LEFT JOIN (
+            SELECT 
+                item_id, 
+                SUM(value) as total_views
+            FROM 
+                statistics_data
+            WHERE 
+                type = 'content_view' 
+                AND tenant_id = ?
+            GROUP BY 
+                item_id
+        ) view_stats ON c.id = view_stats.item_id
+        LEFT JOIN (
+            SELECT 
+                item_id, 
+                SUM(value) as total_likes
+            FROM 
+                statistics_data
+            WHERE 
+                type = 'content_like' 
+                AND tenant_id = ?
+            GROUP BY 
+                item_id
+        ) like_stats ON c.id = like_stats.item_id
+        WHERE 
+            c.tenant_id = ?
+        ORDER BY 
+            view_count DESC, like_count DESC
+        LIMIT ?
+    `
+
+	err := r.db.Select(&rankingList, query, tenantID, tenantID, tenantID, limit)
 	if err != nil {
-		logx.Errorf("获取内容排行榜失败: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("查询内容排行失败: %w", err)
 	}
 
-	return ranking, nil
+	return rankingList, nil
 }
