@@ -23,12 +23,18 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.AdminServiceContext) {
 
 	// 注册仪表盘API
 	registerDashboardHandlers(server, serverCtx)
-	
+
 	// 注册内容管理API
 	registerContentHandlers(server, serverCtx)
-	
+
 	// 注册交易管理API
 	registerTradeHandlers(server, serverCtx)
+
+	// 注册积分管理API
+	registerPointsHandlers(server, serverCtx)
+
+	// 注册收藏管理API
+	registerFavoritesHandlers(server, serverCtx)
 }
 
 // registerUserHandlers 注册用户管理API
@@ -240,6 +246,122 @@ func registerTradeHandlers(server *rest.Server, serverCtx *svc.AdminServiceConte
 					Method:  http.MethodGet,
 					Path:    "/api/v1/admin/reports/financial",
 					Handler: trade.GetFinancialReportHandler(serverCtx),
+				},
+			},
+		),
+	)
+}
+
+// registerPointsHandlers 注册积分管理API
+func registerPointsHandlers(server *rest.Server, serverCtx *svc.AdminServiceContext) {
+	pointsHandler := NewAdminPointsHandler(serverCtx.UserPointsService)
+
+	server.AddRoutes(
+		rest.WithMiddlewares(
+			[]rest.Middleware{serverCtx.JwtAuth},
+			[]rest.Route{
+				{
+					Method:  http.MethodGet,
+					Path:    "/api/v1/admin/points",
+					Handler: serverCtx.WrapHandler(pointsHandler.ListPoints),
+				},
+				{
+					Method:  http.MethodGet,
+					Path:    "/api/v1/admin/points/:id",
+					Handler: serverCtx.WrapHandler(pointsHandler.GetPointByID),
+				},
+				{
+					Method:  http.MethodGet,
+					Path:    "/api/v1/admin/users/:userId/points",
+					Handler: serverCtx.WrapHandler(pointsHandler.GetUserPoints),
+				},
+				{
+					Method:  http.MethodPost,
+					Path:    "/api/v1/admin/points",
+					Handler: serverCtx.WrapHandler(pointsHandler.AddPoints),
+				},
+				{
+					Method:  http.MethodDelete,
+					Path:    "/api/v1/admin/points/:id",
+					Handler: serverCtx.WrapHandler(pointsHandler.DeletePoint),
+				},
+				{
+					Method:  http.MethodGet,
+					Path:    "/api/v1/admin/points/export",
+					Handler: serverCtx.WrapHandler(pointsHandler.ExportPointsData),
+				},
+				{
+					Method:  http.MethodGet,
+					Path:    "/api/v1/admin/points/statistics",
+					Handler: serverCtx.WrapHandler(pointsHandler.GetPointsStatistics),
+				},
+				{
+					Method:  http.MethodGet,
+					Path:    "/api/v1/admin/points/rules",
+					Handler: serverCtx.WrapHandler(pointsHandler.GetPointsRules),
+				},
+				{
+					Method:  http.MethodPut,
+					Path:    "/api/v1/admin/points/rules",
+					Handler: serverCtx.WrapHandler(pointsHandler.UpdatePointsRules),
+				},
+			},
+		),
+	)
+}
+
+// registerFavoritesHandlers 注册收藏管理API
+func registerFavoritesHandlers(server *rest.Server, serverCtx *svc.AdminServiceContext) {
+	favoritesHandler := NewAdminFavoritesHandler(serverCtx.UserFavoriteService)
+
+	server.AddRoutes(
+		rest.WithMiddlewares(
+			[]rest.Middleware{serverCtx.JwtAuth},
+			[]rest.Route{
+				{
+					Method:  http.MethodGet,
+					Path:    "/api/v1/admin/favorites",
+					Handler: serverCtx.WrapHandler(favoritesHandler.ListFavorites),
+				},
+				{
+					Method:  http.MethodGet,
+					Path:    "/api/v1/admin/favorites/:id",
+					Handler: serverCtx.WrapHandler(favoritesHandler.GetFavoriteByID),
+				},
+				{
+					Method:  http.MethodGet,
+					Path:    "/api/v1/admin/users/:userId/favorites",
+					Handler: serverCtx.WrapHandler(favoritesHandler.GetUserFavorites),
+				},
+				{
+					Method:  http.MethodDelete,
+					Path:    "/api/v1/admin/favorites/:id",
+					Handler: serverCtx.WrapHandler(favoritesHandler.DeleteFavorite),
+				},
+				{
+					Method:  http.MethodDelete,
+					Path:    "/api/v1/admin/favorites/batch",
+					Handler: serverCtx.WrapHandler(favoritesHandler.BatchDeleteFavorites),
+				},
+				{
+					Method:  http.MethodGet,
+					Path:    "/api/v1/admin/favorites/export",
+					Handler: serverCtx.WrapHandler(favoritesHandler.ExportFavoritesData),
+				},
+				{
+					Method:  http.MethodGet,
+					Path:    "/api/v1/admin/favorites/statistics",
+					Handler: serverCtx.WrapHandler(favoritesHandler.GetFavoritesStatistics),
+				},
+				{
+					Method:  http.MethodGet,
+					Path:    "/api/v1/admin/favorites/hot",
+					Handler: serverCtx.WrapHandler(favoritesHandler.GetHotContent),
+				},
+				{
+					Method:  http.MethodGet,
+					Path:    "/api/v1/admin/favorites/trend",
+					Handler: serverCtx.WrapHandler(favoritesHandler.GetFavoritesTrend),
 				},
 			},
 		),

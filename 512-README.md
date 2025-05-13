@@ -104,12 +104,12 @@ type UserPointsRepository interface {
     ListWithConditions(conditions map[string]interface{}, offset, limit int64) ([]*UserPoints, error)
     CountWithConditions(conditions map[string]interface{}) (int64, error)
     MarkAsRevoked(id int64) error
-    
+
     // 统计相关方法
     CountUsers() (int64, error)
     SumPoints() (int64, error)
     // ... 其他统计方法
-    
+
     // 积分规则相关方法
     GetPointsRules() (*PointsRules, error)
     UpdatePointsRules(rules *PointsRules) error
@@ -150,7 +150,7 @@ type UserFavoriteRepository interface {
     CountWithConditions(conditions map[string]interface{}) (int64, error)
     DeleteByID(id int64) error
     BatchDelete(ids []int64) error
-    
+
     // 统计相关方法
     CountUsers() (int64, error)
     CountFavorites() (int64, error)
