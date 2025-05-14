@@ -274,6 +274,72 @@ type (
 		UserCount    int32             `json:"user_count"`       // 用户数
 		DataPoints   []ReportDataPoint `json:"data_points"`      // 数据点
 	}
+
+	// 产品详情
+	ProductDetail {
+		ProductId      int64   `json:"product_id"`                // 产品ID
+		Name           string  `json:"name"`                      // 产品名称
+		CompanyId      int64   `json:"company_id"`                // 所属企业ID
+		CompanyName    string  `json:"company_name"`              // 所属企业名称
+		Category       string  `json:"category"`                  // 产品分类
+		Price          float64 `json:"price"`                     // 价格
+		Specification  string  `json:"specification,optional"`    // 规格
+		Material       string  `json:"material,optional"`         // 材质
+		Stock          int32   `json:"stock"`                     // 库存
+		MinOrder       int32   `json:"min_order,optional"`        // 最小订购量
+		Description    string  `json:"description,optional"`      // 描述
+		Images         string  `json:"images,optional"`           // 图片，JSON数组
+		ContactPerson  string  `json:"contact_person,optional"`   // 联系人
+		ContactPhone   string  `json:"contact_phone,optional"`    // 联系电话
+		ContactEmail   string  `json:"contact_email,optional"`    // 联系邮箱
+		Address        string  `json:"address,optional"`          // 地址
+		Views          int32   `json:"views"`                     // 浏览量
+		Sales          int32   `json:"sales"`                     // 销量
+		CreatedAt      string  `json:"created_at"`                // 创建时间
+		UpdatedAt      string  `json:"updated_at"`                // 更新时间
+	}
+
+	// 产品详情请求
+	GetProductReq {
+		ProductId int64 `path:"product_id"` // 产品ID
+	}
+
+	// 产品详情响应
+	GetProductResp {
+		Product ProductDetail `json:"product"` // 产品详情
+	}
+
+	// 产品列表请求
+	ListProductsReq {
+		CompanyId   int64  `form:"company_id,optional"`           // 企业ID
+		Category    string `form:"category,optional"`             // 产品分类
+		Keyword     string `form:"keyword,optional"`              // 关键词
+		PriceMin    float64 `form:"price_min,optional"`           // 最低价格
+		PriceMax    float64 `form:"price_max,optional"`           // 最高价格
+		SortBy      string `form:"sort_by,optional,default=time"` // 排序方式：time, price, sales, views
+		SortOrder   string `form:"sort_order,optional,default=desc"` // 排序顺序：asc, desc
+		Page        int32  `form:"page,optional,default=1"`       // 页码
+		PageSize    int32  `form:"page_size,optional,default=10"` // 每页数量
+	}
+
+	// 产品列表响应
+	ListProductsResp {
+		Total    int32           `json:"total"`                   // 总数
+		Page     int32           `json:"page"`                    // 当前页
+		Size     int32           `json:"size"`                    // 每页数量
+		Products []ProductDetail `json:"products"`                // 产品列表
+	}
+
+	// 相关产品请求
+	GetRelatedProductsReq {
+		ProductId int64 `path:"product_id"`                       // 产品ID
+		Limit     int32 `form:"limit,optional,default=5"`         // 数量限制
+	}
+
+	// 相关产品响应
+	GetRelatedProductsResp {
+		Products []ProductDetail `json:"products"`                // 相关产品列表
+	}
 )
 
 // 订单相关接口
@@ -344,4 +410,22 @@ service Trade {
 
 	@handler GetTransactions
 	get /api/v1/accounts/transactions (GetTransactionsReq) returns (GetTransactionsResp)
+}
+
+// 产品相关接口
+@server (
+	group: products
+)
+service Trade {
+	@doc "获取产品详情"
+	@handler GetProduct
+	get /api/v1/products/:product_id (GetProductReq) returns (GetProductResp)
+
+	@doc "获取产品列表"
+	@handler ListProducts
+	get /api/v1/products (ListProductsReq) returns (ListProductsResp)
+
+	@doc "获取相关产品"
+	@handler GetRelatedProducts
+	get /api/v1/products/:product_id/related (GetRelatedProductsReq) returns (GetRelatedProductsResp)
 }
