@@ -24,33 +24,58 @@ type ServiceConfig struct {
 var services = []ServiceConfig{
 	{
 		Name:    "API网关服务",
-		CmdPath: "./cmd/gateway/main.go",
-		Args:    []string{"run", "./cmd/gateway/main.go"},
+		CmdPath: "./services/gateway-service/main.go",
+		Args:    []string{"run", "./services/gateway-service/main.go"},
 	},
 	{
 		Name:    "用户服务",
-		CmdPath: "./cmd/rpc/user/main.go",
-		Args:    []string{"run", "./cmd/rpc/user/main.go"},
+		CmdPath: "./services/user-service/main.go",
+		Args:    []string{"run", "./services/user-service/main.go"},
 	},
 	{
 		Name:    "内容服务",
-		CmdPath: "./cmd/rpc/content/main.go",
-		Args:    []string{"run", "./cmd/rpc/content/main.go"},
+		CmdPath: "./services/content-service/main.go",
+		Args:    []string{"run", "./services/content-service/main.go"},
 	},
 	{
 		Name:    "文件服务",
-		CmdPath: "./cmd/rpc/file/main.go",
-		Args:    []string{"run", "./cmd/rpc/file/main.go"},
+		CmdPath: "./services/file-service/main.go",
+		Args:    []string{"run", "./services/file-service/main.go"},
 	},
 	{
 		Name:    "交互服务",
-		CmdPath: "./cmd/rpc/interaction/main.go",
-		Args:    []string{"run", "./cmd/rpc/interaction/main.go"},
+		CmdPath: "./services/interaction-service/main.go",
+		Args:    []string{"run", "./services/interaction-service/main.go"},
 	},
 	{
 		Name:    "后台管理服务",
-		CmdPath: "./cmd/admin/main/main.go",
-		Args:    []string{"run", "./cmd/admin/main/main.go"},
+		CmdPath: "./services/admin-service/main.go",
+		Args:    []string{"run", "./services/admin-service/main.go"},
+	},
+	{
+		Name:    "交易服务",
+		CmdPath: "./services/trade-service/main.go",
+		Args:    []string{"run", "./services/trade-service/main.go"},
+	},
+	{
+		Name:    "渲染服务",
+		CmdPath: "./services/render-service/main.go",
+		Args:    []string{"run", "./services/render-service/main.go"},
+	},
+	{
+		Name:    "组件服务",
+		CmdPath: "./services/component-service/main.go",
+		Args:    []string{"run", "./services/component-service/main.go"},
+	},
+	{
+		Name:    "页面服务",
+		CmdPath: "./services/page-service/main.go",
+		Args:    []string{"run", "./services/page-service/main.go"},
+	},
+	{
+		Name:    "站点服务",
+		CmdPath: "./services/site-service/main.go",
+		Args:    []string{"run", "./services/site-service/main.go"},
 	},
 	// 可根据需要添加更多服务
 }
@@ -66,6 +91,11 @@ func main() {
 	runGateway := flag.Bool("gateway", false, "运行API网关服务")
 	runUser := flag.Bool("user", false, "运行用户服务")
 	runContent := flag.Bool("content", false, "运行内容服务")
+	runTrade := flag.Bool("trade", false, "运行交易服务")
+	runRender := flag.Bool("render", false, "运行渲染服务")
+	runComponent := flag.Bool("component", false, "运行组件服务")
+	runPage := flag.Bool("page", false, "运行页面服务")
+	runSite := flag.Bool("site", false, "运行站点服务")
 	flag.Parse()
 
 	var servicesToRun []ServiceConfig
@@ -82,6 +112,21 @@ func main() {
 		}
 		if *runContent {
 			servicesToRun = append(servicesToRun, services[2])
+		}
+		if *runTrade {
+			servicesToRun = append(servicesToRun, services[6])
+		}
+		if *runRender {
+			servicesToRun = append(servicesToRun, services[7])
+		}
+		if *runComponent {
+			servicesToRun = append(servicesToRun, services[8])
+		}
+		if *runPage {
+			servicesToRun = append(servicesToRun, services[9])
+		}
+		if *runSite {
+			servicesToRun = append(servicesToRun, services[10])
 		}
 		// 如果没有指定任何服务，则默认运行网关和用户服务
 		if len(servicesToRun) == 0 {

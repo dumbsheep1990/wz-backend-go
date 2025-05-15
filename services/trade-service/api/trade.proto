@@ -1,0 +1,260 @@
+syntax = "proto3";
+
+package trade;
+option go_package="wz-backend-go/services/trade-service/api/proto";
+
+// 订单服务
+service Order {
+  // 创建订单
+  rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse) {}
+  // 获取订单信息
+  rpc GetOrder(GetOrderRequest) returns (GetOrderResponse) {}
+  // 更新订单状态
+  rpc UpdateOrderStatus(UpdateOrderStatusRequest) returns (UpdateOrderStatusResponse) {}
+  // 取消订单
+  rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse) {}
+  // 获取用户订单列表
+  rpc GetUserOrders(GetUserOrdersRequest) returns (GetUserOrdersResponse) {}
+}
+
+// 购物车服务
+service Cart {
+  // 添加商品到购物车
+  rpc AddToCart(AddToCartRequest) returns (AddToCartResponse) {}
+  // 从购物车删除商品
+  rpc RemoveFromCart(RemoveFromCartRequest) returns (RemoveFromCartResponse) {}
+  // 更新购物车商品数量
+  rpc UpdateCartItem(UpdateCartItemRequest) returns (UpdateCartItemResponse) {}
+  // 获取购物车信息
+  rpc GetCart(GetCartRequest) returns (GetCartResponse) {}
+  // 清空购物车
+  rpc ClearCart(ClearCartRequest) returns (ClearCartResponse) {}
+}
+
+// 支付服务
+service Payment {
+  // 创建支付
+  rpc CreatePayment(CreatePaymentRequest) returns (CreatePaymentResponse) {}
+  // 查询支付状态
+  rpc QueryPayment(QueryPaymentRequest) returns (QueryPaymentResponse) {}
+  // 处理支付回调
+  rpc HandlePaymentCallback(HandlePaymentCallbackRequest) returns (HandlePaymentCallbackResponse) {}
+  // 退款
+  rpc Refund(RefundRequest) returns (RefundResponse) {}
+  // 查询退款状态
+  rpc QueryRefund(QueryRefundRequest) returns (QueryRefundResponse) {}
+}
+
+// 创建订单请求
+message CreateOrderRequest {
+  int64 user_id = 1;
+  repeated OrderItem items = 2;
+  string address = 3;
+  string contact_name = 4;
+  string contact_phone = 5;
+  string note = 6;
+}
+
+// 订单项
+message OrderItem {
+  int64 product_id = 1;
+  int32 quantity = 2;
+  double price = 3;
+}
+
+// 创建订单响应
+message CreateOrderResponse {
+  int64 order_id = 1;
+  string order_number = 2;
+  double total_amount = 3;
+  string status = 4;
+  string created_at = 5;
+}
+
+// 获取订单请求
+message GetOrderRequest {
+  int64 order_id = 1;
+}
+
+// 获取订单响应
+message GetOrderResponse {
+  int64 order_id = 1;
+  string order_number = 2;
+  int64 user_id = 3;
+  repeated OrderItem items = 4;
+  double total_amount = 5;
+  string status = 6;
+  string address = 7;
+  string contact_name = 8;
+  string contact_phone = 9;
+  string note = 10;
+  string created_at = 11;
+  string updated_at = 12;
+}
+
+// 更新订单状态请求
+message UpdateOrderStatusRequest {
+  int64 order_id = 1;
+  string status = 2;
+}
+
+// 更新订单状态响应
+message UpdateOrderStatusResponse {
+  bool success = 1;
+}
+
+// 取消订单请求
+message CancelOrderRequest {
+  int64 order_id = 1;
+  string reason = 2;
+}
+
+// 取消订单响应
+message CancelOrderResponse {
+  bool success = 1;
+}
+
+// 获取用户订单列表请求
+message GetUserOrdersRequest {
+  int64 user_id = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  string status = 4;
+}
+
+// 获取用户订单列表响应
+message GetUserOrdersResponse {
+  repeated GetOrderResponse orders = 1;
+  int32 total = 2;
+}
+
+// 添加到购物车请求
+message AddToCartRequest {
+  int64 user_id = 1;
+  int64 product_id = 2;
+  int32 quantity = 3;
+}
+
+// 添加到购物车响应
+message AddToCartResponse {
+  bool success = 1;
+}
+
+// 从购物车删除商品请求
+message RemoveFromCartRequest {
+  int64 user_id = 1;
+  int64 product_id = 2;
+}
+
+// 从购物车删除商品响应
+message RemoveFromCartResponse {
+  bool success = 1;
+}
+
+// 更新购物车商品数量请求
+message UpdateCartItemRequest {
+  int64 user_id = 1;
+  int64 product_id = 2;
+  int32 quantity = 3;
+}
+
+// 更新购物车商品数量响应
+message UpdateCartItemResponse {
+  bool success = 1;
+}
+
+// 获取购物车请求
+message GetCartRequest {
+  int64 user_id = 1;
+}
+
+// 购物车项
+message CartItem {
+  int64 product_id = 1;
+  string product_name = 2;
+  double price = 3;
+  int32 quantity = 4;
+  string image_url = 5;
+}
+
+// 获取购物车响应
+message GetCartResponse {
+  repeated CartItem items = 1;
+  double total_amount = 2;
+  int32 total_quantity = 3;
+}
+
+// 清空购物车请求
+message ClearCartRequest {
+  int64 user_id = 1;
+}
+
+// 清空购物车响应
+message ClearCartResponse {
+  bool success = 1;
+}
+
+// 创建支付请求
+message CreatePaymentRequest {
+  int64 order_id = 1;
+  string payment_method = 2; // alipay, wechatpay, paypal
+  string currency = 3; // CNY, USD
+  string client_ip = 4;
+  string return_url = 5;
+}
+
+// 创建支付响应
+message CreatePaymentResponse {
+  string payment_id = 1;
+  string payment_url = 2; // 支付跳转链接
+  string qr_code = 3; // 二维码内容
+}
+
+// 查询支付状态请求
+message QueryPaymentRequest {
+  string payment_id = 1;
+}
+
+// 查询支付状态响应
+message QueryPaymentResponse {
+  string payment_id = 1;
+  string status = 2; // pending, success, failed
+  string transaction_id = 3; // 支付平台交易流水号
+  string paid_at = 4;
+}
+
+// 处理支付回调请求
+message HandlePaymentCallbackRequest {
+  string payment_method = 1;
+  string data = 2; // 各支付平台回调数据JSON字符串
+}
+
+// 处理支付回调响应
+message HandlePaymentCallbackResponse {
+  bool success = 1;
+}
+
+// 退款请求
+message RefundRequest {
+  string payment_id = 1;
+  double amount = 2;
+  string reason = 3;
+}
+
+// 退款响应
+message RefundResponse {
+  string refund_id = 1;
+  string status = 2;
+}
+
+// 查询退款状态请求
+message QueryRefundRequest {
+  string refund_id = 1;
+}
+
+// 查询退款状态响应
+message QueryRefundResponse {
+  string refund_id = 1;
+  string status = 2;
+  string refunded_at = 3;
+} 

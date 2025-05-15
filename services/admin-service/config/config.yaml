@@ -1,0 +1,65 @@
+Name: admin-service
+Host: 0.0.0.0
+Port: 8081
+Timeout: 30000
+
+Log:
+  ServiceName: admin-service
+  Mode: console
+  Level: info
+
+Auth:
+  AccessSecret: your-jwt-secret-here
+  AccessExpire: 86400  # 24小时
+
+DB:
+  Driver: mysql
+  DataSource: root:password@tcp(localhost:3306)/wz_admin?charset=utf8mb4&parseTime=true&loc=Asia%2FShanghai
+
+Cache:
+  - Host: localhost:6379
+    Pass: 
+    Type: node
+
+# 微服务客户端配置
+UserRPC:
+  Etcd:
+    Hosts:
+      - localhost:2379
+    Key: user.rpc
+  
+ContentRPC:
+  Etcd:
+    Hosts:
+      - localhost:2379
+    Key: content.rpc
+
+InteractionRPC:
+  Etcd:
+    Hosts:
+      - localhost:2379
+    Key: interaction.rpc
+
+AIRPC:
+  Etcd:
+    Hosts:
+      - localhost:2379
+    Key: ai.rpc
+
+TradeRPC:
+  Etcd:
+    Hosts:
+      - localhost:2379
+    Key: trade.rpc
+
+FileRPC:
+  Etcd:
+    Hosts:
+      - localhost:2379
+    Key: file.rpc
+
+StatisticsRPC:
+  Etcd:
+    Hosts:
+      - localhost:2379
+    Key: statistics.rpc 
