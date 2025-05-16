@@ -1,0 +1,187 @@
+syntax = "v1"
+
+info (
+	title: "用户管理API"
+	desc: "管理系统的用户管理相关API定义"
+	author: "System"
+	email: "admin@example.com"
+	version: "v1"
+)
+
+import "admin.api"
+
+// 用户管理相关API
+@server(
+	prefix: api/v1
+	middleware: [AdminJWT, AdminCasbin]
+)
+service admin {
+	@doc "获取用户列表"
+	@handler GetUserList
+	post /admin/user/getUserList (GetUserListRequest) returns (GetUserListResponse)
+	
+	@doc "获取用户详情"
+	@handler GetUserInfo
+	get /admin/user/getUserInfo (GetUserInfoRequest) returns (GetUserInfoResponse)
+	
+	@doc "创建用户"
+	@handler CreateUser
+	post /admin/user/admin_register (CreateUserRequest) returns (Response)
+	
+	@doc "更新用户"
+	@handler UpdateUser
+	put /admin/user/setUserInfo (UpdateUserRequest) returns (Response)
+	
+	@doc "更新自身信息"
+	@handler UpdateSelfInfo
+	put /admin/user/setSelfInfo (UpdateSelfInfoRequest) returns (Response)
+	
+	@doc "删除用户"
+	@handler DeleteUser
+	delete /admin/user/deleteUser (DeleteUserRequest) returns (Response)
+	
+	@doc "修改密码"
+	@handler ChangePassword
+	post /admin/user/changePassword (ChangePasswordRequest) returns (Response)
+	
+	@doc "重置密码"
+	@handler ResetPassword
+	post /admin/user/resetPassword (ResetPasswordRequest) returns (Response)
+	
+	@doc "设置用户权限"
+	@handler SetUserAuthority
+	post /admin/user/setUserAuthority (SetUserAuthorityRequest) returns (Response)
+	
+	@doc "设置用户权限组"
+	@handler SetUserAuthorities
+	post /admin/user/setUserAuthorities (SetUserAuthoritiesRequest) returns (Response)
+}
+
+// 获取用户列表请求
+type GetUserListRequest {
+	PageRequest
+	Username     string `json:"username,optional"`
+	Status       int    `json:"status,optional"`
+	AuthorityId  string `json:"authorityId,optional"`
+	CreatedAfter string `json:"createdAfter,optional"`
+	CreatedBefore string `json:"createdBefore,optional"`
+}
+
+// 获取用户列表响应
+type GetUserListResponse {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Data    UserPageData `json:"data"`
+}
+
+type UserPageData {
+	List     []UserInfo `json:"list"`
+	Total    int64      `json:"total"`
+	Page     int        `json:"page"`
+	PageSize int        `json:"pageSize"`
+}
+
+// 用户信息
+type UserInfo {
+	Id          int64      `json:"id"`
+	UUID        string     `json:"uuid"`
+	Username    string     `json:"userName"`
+	NickName    string     `json:"nickName"`
+	Email       string     `json:"email"`
+	Phone       string     `json:"phone"`
+	Avatar      string     `json:"headerImg"`
+	Status      int        `json:"status"`
+	Authorities []Authority `json:"authorities"`
+	AuthorityId string     `json:"authorityId"`
+	SideMode    string     `json:"sideMode"`
+	ActiveColor string     `json:"activeColor"`
+	BaseColor   string     `json:"baseColor"`
+	CreatedAt   string     `json:"createdAt"`
+	UpdatedAt   string     `json:"updatedAt"`
+	LastLoginAt string     `json:"lastLoginAt"`
+}
+
+// 权限信息
+type Authority {
+	AuthorityId   string `json:"authorityId"`
+	AuthorityName string `json:"authorityName"`
+	ParentId      string `json:"parentId"`
+	DefaultRouter string `json:"defaultRouter"`
+	CreatedAt     string `json:"createdAt"`
+	UpdatedAt     string `json:"updatedAt"`
+}
+
+// 获取用户详情请求
+type GetUserInfoRequest {
+	ID int64 `form:"id,optional" json:"id,optional"`
+}
+
+// 获取用户详情响应
+type GetUserInfoResponse {
+	Code    int      `json:"code"`
+	Message string   `json:"message"`
+	Data    UserInfo `json:"data"`
+}
+
+// 创建用户请求
+type CreateUserRequest {
+	Username    string `json:"userName"`
+	Password    string `json:"password"`
+	NickName    string `json:"nickName"`
+	Email       string `json:"email,optional"`
+	Phone       string `json:"phone,optional"`
+	Avatar      string `json:"headerImg,optional"`
+	AuthorityId string `json:"authorityId"`
+}
+
+// 更新用户请求
+type UpdateUserRequest {
+	Id          int64  `json:"id"`
+	Username    string `json:"userName"`
+	NickName    string `json:"nickName"`
+	Email       string `json:"email,optional"`
+	Phone       string `json:"phone,optional"`
+	Avatar      string `json:"headerImg,optional"`
+	Status      int    `json:"status,optional"`
+	AuthorityId string `json:"authorityId,optional"`
+}
+
+// 更新自身信息请求
+type UpdateSelfInfoRequest {
+	NickName    string `json:"nickName"`
+	Email       string `json:"email,optional"`
+	Phone       string `json:"phone,optional"`
+	Avatar      string `json:"headerImg,optional"`
+	SideMode    string `json:"sideMode,optional"`
+	ActiveColor string `json:"activeColor,optional"`
+	BaseColor   string `json:"baseColor,optional"`
+}
+
+// 删除用户请求
+type DeleteUserRequest {
+	Id int64 `json:"id"`
+}
+
+// 修改密码请求
+type ChangePasswordRequest {
+	Password    string `json:"password"`
+	NewPassword string `json:"newPassword"`
+}
+
+// 重置密码请求
+type ResetPasswordRequest {
+	Id       int64  `json:"id"`
+	Password string `json:"password"`
+}
+
+// 设置用户权限请求
+type SetUserAuthorityRequest {
+	UserId      int64  `json:"userId"`
+	AuthorityId string `json:"authorityId"`
+}
+
+// 设置用户权限组请求
+type SetUserAuthoritiesRequest {
+	UserId       int64    `json:"userId"`
+	AuthorityIds []string `json:"authorityIds"`
+} 

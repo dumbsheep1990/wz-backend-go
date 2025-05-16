@@ -1,0 +1,110 @@
+syntax = "v1"
+
+info (
+	title: "API管理相关API"
+	desc: "管理系统的API管理相关API定义"
+	author: "System"
+	email: "admin@example.com"
+	version: "v1"
+)
+
+import "admin.api"
+
+// API管理相关API
+@server(
+	prefix: api/v1
+	middleware: [AdminJWT, AdminCasbin]
+)
+service admin {
+	@doc "创建API"
+	@handler CreateApi
+	post /admin/api/createApi (SysApi) returns (Response)
+	
+	@doc "删除API"
+	@handler DeleteApi
+	post /admin/api/deleteApi (DeleteApiRequest) returns (Response)
+	
+	@doc "获取API列表"
+	@handler GetApiList
+	post /admin/api/getApiList (GetApiListRequest) returns (GetApiListResponse)
+	
+	@doc "更新API"
+	@handler UpdateApi
+	post /admin/api/updateApi (SysApi) returns (Response)
+	
+	@doc "根据ID获取API"
+	@handler GetApiById
+	post /admin/api/getApiById (GetApiByIdRequest) returns (GetApiByIdResponse)
+	
+	@doc "获取所有API"
+	@handler GetAllApis
+	post /admin/api/getAllApis returns (GetAllApisResponse)
+	
+	@doc "删除选中API"
+	@handler DeleteApisByIds
+	delete /admin/api/deleteApisByIds (DeleteApisByIdsRequest) returns (Response)
+}
+
+// API信息
+type SysApi {
+	Id          int64  `json:"id"`
+	CreatedAt   string `json:"createdAt"`
+	UpdatedAt   string `json:"updatedAt"`
+	DeletedAt   string `json:"deletedAt,optional"`
+	Path        string `json:"path"`
+	Description string `json:"description"`
+	ApiGroup    string `json:"apiGroup"`
+	Method      string `json:"method"`
+}
+
+// 删除API请求
+type DeleteApiRequest {
+	Id int64 `json:"id"`
+}
+
+// 获取API列表请求
+type GetApiListRequest {
+	PageRequest
+	Path        string `json:"path,optional"`
+	Description string `json:"description,optional"`
+	ApiGroup    string `json:"apiGroup,optional"`
+	Method      string `json:"method,optional"`
+}
+
+// 获取API列表响应
+type GetApiListResponse {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Data    ApiPageData `json:"data"`
+}
+
+type ApiPageData {
+	List     []SysApi `json:"list"`
+	Total    int64    `json:"total"`
+	Page     int      `json:"page"`
+	PageSize int      `json:"pageSize"`
+}
+
+// 根据ID获取API请求
+type GetApiByIdRequest {
+	Id int64 `json:"id"`
+}
+
+// 根据ID获取API响应
+type GetApiByIdResponse {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Data    SysApi `json:"data"`
+}
+
+// 获取所有API响应
+type GetAllApisResponse {
+	Code    int      `json:"code"`
+	Message string   `json:"message"`
+	Data    []SysApi `json:"data"`
+}
+
+// 批量删除API请求
+type DeleteApisByIdsRequest {
+	Ids []int64 `json:"ids"`
+} 

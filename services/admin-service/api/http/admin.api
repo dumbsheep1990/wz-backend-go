@@ -1,0 +1,93 @@
+syntax = "v1"
+
+info (
+	title: "后台管理系统API"
+	desc: "管理系统的所有API定义"
+	author: "System"
+	email: "admin@example.com"
+	version: "v1"
+)
+
+// 通用响应结构
+type Response {
+	Code    int         `json:"code"`
+	Message string      `json:"message"`
+	Data    interface{} `json:"data,omitempty"`
+}
+
+// 分页请求
+type PageRequest {
+	Page     int    `form:"page" json:"page"`
+	PageSize int    `form:"pageSize" json:"pageSize"`
+	Keyword  string `form:"keyword,optional" json:"keyword,optional"`
+}
+
+// 分页数据返回
+type PageResponse {
+	List     interface{} `json:"list"`
+	Total    int64       `json:"total"`
+	Page     int         `json:"page"`
+	PageSize int         `json:"pageSize"`
+}
+
+// 认证相关API
+@server(
+	prefix: api/v1
+)
+service admin {
+	@doc "管理员登录"
+	@handler Login
+	post /admin/login (LoginRequest) returns (LoginResponse)
+	
+	@doc "管理员刷新token"
+	@handler RefreshToken
+	post /admin/refresh_token (RefreshTokenRequest) returns (RefreshTokenResponse)
+	
+	@doc "获取验证码"
+	@handler Captcha
+	get /admin/captcha returns (CaptchaResponse)
+}
+
+// 登录请求
+type LoginRequest {
+	Username  string `json:"username"`
+	Password  string `json:"password"`
+	Captcha   string `json:"captcha"`
+	CaptchaId string `json:"captchaId"`
+}
+
+// 登录响应
+type LoginResponse {
+	User      AdminInfo `json:"user"`
+	Token     string    `json:"token"`
+	ExpiresAt int64     `json:"expiresAt"`
+}
+
+// 管理员基本信息
+type AdminInfo {
+	Id        int64  `json:"id"`
+	Username  string `json:"username"`
+	Role      string `json:"role"`
+	RoleName  string `json:"roleName"`
+	Avatar    string `json:"avatar"`
+	Status    int    `json:"status"`
+	LastLogin string `json:"lastLogin"`
+	CreatedAt string `json:"createdAt"`
+}
+
+// 刷新Token请求
+type RefreshTokenRequest {
+	Token string `json:"token"`
+}
+
+// 刷新Token响应
+type RefreshTokenResponse {
+	Token     string `json:"token"`
+	ExpiresAt int64  `json:"expiresAt"`
+}
+
+// 验证码响应
+type CaptchaResponse {
+	CaptchaId string `json:"captchaId"`
+	PicPath   string `json:"picPath"`
+} 

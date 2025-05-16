@@ -1,0 +1,390 @@
+syntax = "v1"
+
+info (
+	title: "系统设置相关API"
+	desc: "管理系统的系统设置相关API定义"
+	author: "System"
+	email: "admin@example.com"
+	version: "v1"
+)
+
+import "admin.api"
+
+// 系统设置相关API
+@server(
+	prefix: api/v1
+	middleware: [AdminJWT, AdminCasbin]
+)
+service admin {
+	@doc "获取系统配置"
+	@handler GetSystemConfig
+	post /admin/system/getSystemConfig returns (GetSystemConfigResponse)
+	
+	@doc "设置系统配置"
+	@handler SetSystemConfig
+	post /admin/system/setSystemConfig (SystemConfig) returns (Response)
+	
+	@doc "获取服务器信息"
+	@handler GetServerInfo
+	post /admin/system/getServerInfo returns (GetServerInfoResponse)
+	
+	@doc "重启系统"
+	@handler ReloadSystem
+	post /admin/system/reloadSystem returns (Response)
+	
+	@doc "获取系统字典列表"
+	@handler GetDictionaryList
+	post /admin/sysDictionary/getSysDictionaryList (GetDictionaryListRequest) returns (GetDictionaryListResponse)
+	
+	@doc "创建系统字典"
+	@handler CreateDictionary
+	post /admin/sysDictionary/createSysDictionary (SysDictionary) returns (Response)
+	
+	@doc "更新系统字典"
+	@handler UpdateDictionary
+	put /admin/sysDictionary/updateSysDictionary (SysDictionary) returns (Response)
+	
+	@doc "删除系统字典"
+	@handler DeleteDictionary
+	delete /admin/sysDictionary/deleteSysDictionary (DeleteDictionaryRequest) returns (Response)
+	
+	@doc "获取系统字典详情列表"
+	@handler GetDictionaryDetailList
+	post /admin/sysDictionaryDetail/getSysDictionaryDetailList (GetDictionaryDetailListRequest) returns (GetDictionaryDetailListResponse)
+	
+	@doc "创建系统字典详情"
+	@handler CreateDictionaryDetail
+	post /admin/sysDictionaryDetail/createSysDictionaryDetail (SysDictionaryDetail) returns (Response)
+	
+	@doc "更新系统字典详情"
+	@handler UpdateDictionaryDetail
+	put /admin/sysDictionaryDetail/updateSysDictionaryDetail (SysDictionaryDetail) returns (Response)
+	
+	@doc "删除系统字典详情"
+	@handler DeleteDictionaryDetail
+	delete /admin/sysDictionaryDetail/deleteSysDictionaryDetail (DeleteDictionaryDetailRequest) returns (Response)
+	
+	@doc "获取操作日志列表"
+	@handler GetOperationRecordList
+	post /admin/sysOperationRecord/getSysOperationRecordList (GetOperationRecordListRequest) returns (GetOperationRecordListResponse)
+	
+	@doc "删除操作日志"
+	@handler DeleteOperationRecord
+	delete /admin/sysOperationRecord/deleteSysOperationRecord (DeleteOperationRecordRequest) returns (Response)
+	
+	@doc "批量删除操作日志"
+	@handler DeleteOperationRecordsByIds
+	delete /admin/sysOperationRecord/deleteSysOperationRecordByIds (DeleteOperationRecordsByIdsRequest) returns (Response)
+	
+	@doc "获取系统参数列表"
+	@handler GetParamsList
+	post /admin/params/getParamsList (GetParamsListRequest) returns (GetParamsListResponse)
+	
+	@doc "创建系统参数"
+	@handler CreateParams
+	post /admin/params/createParams (SysParams) returns (Response)
+	
+	@doc "更新系统参数"
+	@handler UpdateParams
+	put /admin/params/updateParams (SysParams) returns (Response)
+	
+	@doc "删除系统参数"
+	@handler DeleteParams
+	delete /admin/params/deleteParams (DeleteParamsRequest) returns (Response)
+}
+
+// 系统配置
+type SystemConfig {
+	Id             int64  `json:"id"`
+	CreatedAt      string `json:"createdAt"`
+	UpdatedAt      string `json:"updatedAt"`
+	DeletedAt      string `json:"deletedAt,optional"`
+	SystemName     string `json:"systemName"`
+	SystemLogo     string `json:"systemLogo"`
+	SystemApi      string `json:"systemApi"`
+	SystemDomain   string `json:"systemDomain"`
+	SystemColor    string `json:"systemColor"`
+	SystemMode     string `json:"systemMode"`
+	AdminDomain    string `json:"adminDomain"`
+	FileStoreType  string `json:"fileStoreType"`
+	LogSaveType    string `json:"logSaveType"`
+	LogSavePath    string `json:"logSavePath"`
+	LogLevel       string `json:"logLevel"`
+	LogMaxSize     int    `json:"logMaxSize"`
+	LogMaxBackups  int    `json:"logMaxBackups"`
+	LogMaxAge      int    `json:"logMaxAge"`
+	LogCompress    bool   `json:"logCompress"`
+	EmailHost      string `json:"emailHost"`
+	EmailPort      int    `json:"emailPort"`
+	EmailFrom      string `json:"emailFrom"`
+	EmailSecret    string `json:"emailSecret"`
+	EmailIsSSL     bool   `json:"emailIsSSL"`
+	EmailNickname  string `json:"emailNickname"`
+	LdapOpen       bool   `json:"ldapOpen"`
+	LdapHost       string `json:"ldapHost"`
+	LdapPort       int    `json:"ldapPort"`
+	LdapBindDn     string `json:"ldapBindDn"`
+	LdapPassword   string `json:"ldapPassword"`
+	LdapBaseDn     string `json:"ldapBaseDn"`
+	LdapUserField  string `json:"ldapUserField"`
+	LdapNickName   string `json:"ldapNickName"`
+	LdapEmails     string `json:"ldapEmails"`
+	LdapTls        bool   `json:"ldapTls"`
+	DingTalkOpen   bool   `json:"dingTalkOpen"`
+	DingTalkAppKey string `json:"dingTalkAppKey"`
+	DingTalkAppSecret string `json:"dingTalkAppSecret"`
+	DingTalkAgentId string `json:"dingTalkAgentId"`
+}
+
+// 获取系统配置响应
+type GetSystemConfigResponse {
+	Code    int          `json:"code"`
+	Message string       `json:"message"`
+	Data    SystemConfig `json:"data"`
+}
+
+// 服务器信息
+type ServerInfo {
+	Os             OsInfo      `json:"os"`
+	Cpu            CpuInfo     `json:"cpu"`
+	Ram            RamInfo     `json:"ram"`
+	Disk           DiskInfo    `json:"disk"`
+	GoInfo         GoInfo      `json:"go"`
+	DbInfo         DbInfo      `json:"db"`
+}
+
+// 操作系统信息
+type OsInfo {
+	Name         string `json:"name"`
+	Platform     string `json:"platform"`
+	Family       string `json:"family"`
+	Version      string `json:"version"`
+	KernelArch   string `json:"kernelArch"`
+	KernelVersion string `json:"kernelVersion"`
+}
+
+// CPU信息
+type CpuInfo {
+	Model      string  `json:"model"`
+	Cores      int     `json:"cores"`
+	UsedPercent float64 `json:"usedPercent"`
+}
+
+// 内存信息
+type RamInfo {
+	Total       uint64  `json:"total"`
+	Used        uint64  `json:"used"`
+	Free        uint64  `json:"free"`
+	UsedPercent float64 `json:"usedPercent"`
+}
+
+// 磁盘信息
+type DiskInfo {
+	Total       uint64  `json:"total"`
+	Used        uint64  `json:"used"`
+	Free        uint64  `json:"free"`
+	UsedPercent float64 `json:"usedPercent"`
+}
+
+// Go运行时信息
+type GoInfo {
+	Version     string `json:"version"`
+	NumGoroutine int    `json:"numGoroutine"`
+	NumCpu      int    `json:"numCpu"`
+}
+
+// 数据库信息
+type DbInfo {
+	Type        string `json:"type"`
+	Version     string `json:"version"`
+	DbName      string `json:"dbName"`
+	MaxOpenConn int    `json:"maxOpenConn"`
+	MaxIdleConn int    `json:"maxIdleConn"`
+}
+
+// 获取服务器信息响应
+type GetServerInfoResponse {
+	Code    int        `json:"code"`
+	Message string     `json:"message"`
+	Data    ServerInfo `json:"data"`
+}
+
+// 系统字典
+type SysDictionary {
+	Id          int64  `json:"id"`
+	CreatedAt   string `json:"createdAt"`
+	UpdatedAt   string `json:"updatedAt"`
+	DeletedAt   string `json:"deletedAt,optional"`
+	Name        string `json:"name"`
+	Type        string `json:"type"`
+	Status      int    `json:"status"`
+	Description string `json:"description"`
+}
+
+// 获取字典列表请求
+type GetDictionaryListRequest {
+	PageRequest
+	Name        string `json:"name,optional"`
+	Type        string `json:"type,optional"`
+	Status      int    `json:"status,optional"`
+	Description string `json:"description,optional"`
+}
+
+// 获取字典列表响应
+type GetDictionaryListResponse {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Data    DictionaryPageData `json:"data"`
+}
+
+type DictionaryPageData {
+	List     []SysDictionary `json:"list"`
+	Total    int64           `json:"total"`
+	Page     int             `json:"page"`
+	PageSize int             `json:"pageSize"`
+}
+
+// 删除字典请求
+type DeleteDictionaryRequest {
+	Id int64 `json:"id"`
+}
+
+// 系统字典详情
+type SysDictionaryDetail {
+	Id        int64  `json:"id"`
+	CreatedAt string `json:"createdAt"`
+	UpdatedAt string `json:"updatedAt"`
+	DeletedAt string `json:"deletedAt,optional"`
+	Label     string `json:"label"`
+	Value     string `json:"value"`
+	Status    int    `json:"status"`
+	Sort      int    `json:"sort"`
+	DictTypeId int64 `json:"sysDictionaryID"`
+}
+
+// 获取字典详情列表请求
+type GetDictionaryDetailListRequest {
+	PageRequest
+	DictTypeId int64  `json:"sysDictionaryID"`
+	Label      string `json:"label,optional"`
+	Value      string `json:"value,optional"`
+	Status     int    `json:"status,optional"`
+}
+
+// 获取字典详情列表响应
+type GetDictionaryDetailListResponse {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Data    DictionaryDetailPageData `json:"data"`
+}
+
+type DictionaryDetailPageData {
+	List     []SysDictionaryDetail `json:"list"`
+	Total    int64                 `json:"total"`
+	Page     int                   `json:"page"`
+	PageSize int                   `json:"pageSize"`
+}
+
+// 删除字典详情请求
+type DeleteDictionaryDetailRequest {
+	Id int64 `json:"id"`
+}
+
+// 操作日志记录
+type SysOperationRecord {
+	Id           int64  `json:"id"`
+	CreatedAt    string `json:"createdAt"`
+	UpdatedAt    string `json:"updatedAt"`
+	DeletedAt    string `json:"deletedAt,optional"`
+	Ip           string `json:"ip"`
+	Method       string `json:"method"`
+	Path         string `json:"path"`
+	Status       int    `json:"status"`
+	Latency      int64  `json:"latency"`
+	Agent        string `json:"agent"`
+	ErrorMessage string `json:"errorMessage"`
+	Body         string `json:"body"`
+	UserId       int64  `json:"userId"`
+	User         string `json:"user"`
+	Resp         string `json:"resp"`
+}
+
+// 获取操作日志列表请求
+type GetOperationRecordListRequest {
+	PageRequest
+	Method       string `json:"method,optional"`
+	Path         string `json:"path,optional"`
+	Status       int    `json:"status,optional"`
+	UserId       int64  `json:"userId,optional"`
+	CreatedAfter string `json:"createdAfter,optional"`
+	CreatedBefore string `json:"createdBefore,optional"`
+}
+
+// 获取操作日志列表响应
+type GetOperationRecordListResponse {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Data    OperationRecordPageData `json:"data"`
+}
+
+type OperationRecordPageData {
+	List     []SysOperationRecord `json:"list"`
+	Total    int64                `json:"total"`
+	Page     int                  `json:"page"`
+	PageSize int                  `json:"pageSize"`
+}
+
+// 删除操作日志请求
+type DeleteOperationRecordRequest {
+	Id int64 `json:"id"`
+}
+
+// 批量删除操作日志请求
+type DeleteOperationRecordsByIdsRequest {
+	Ids []int64 `json:"ids"`
+}
+
+// 系统参数
+type SysParams {
+	Id          int64  `json:"id"`
+	CreatedAt   string `json:"createdAt"`
+	UpdatedAt   string `json:"updatedAt"`
+	DeletedAt   string `json:"deletedAt,optional"`
+	ParamName   string `json:"paramName"`
+	ParamKey    string `json:"paramKey"`
+	ParamValue  string `json:"paramValue"`
+	ParamType   string `json:"paramType"`
+	ParamDesc   string `json:"paramDesc"`
+	ParamGroup  string `json:"paramGroup"`
+	Status      int    `json:"status"`
+}
+
+// 获取系统参数列表请求
+type GetParamsListRequest {
+	PageRequest
+	ParamName  string `json:"paramName,optional"`
+	ParamKey   string `json:"paramKey,optional"`
+	ParamValue string `json:"paramValue,optional"`
+	ParamType  string `json:"paramType,optional"`
+	ParamGroup string `json:"paramGroup,optional"`
+	Status     int    `json:"status,optional"`
+}
+
+// 获取系统参数列表响应
+type GetParamsListResponse {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Data    ParamsPageData `json:"data"`
+}
+
+type ParamsPageData {
+	List     []SysParams `json:"list"`
+	Total    int64       `json:"total"`
+	Page     int         `json:"page"`
+	PageSize int         `json:"pageSize"`
+}
+
+// 删除系统参数请求
+type DeleteParamsRequest {
+	Id int64 `json:"id"`
+} 

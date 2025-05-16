@@ -8,37 +8,37 @@
 
 项目目前包含以下微服务组件：
 
-| 服务名称 | 服务代码目录 | 功能描述 |
-|---------|-------------|---------|
-| API网关服务 | gateway-service | 负责API路由、请求转发、负载均衡、接口聚合和统一认证 |
-| 用户服务 | user-service | 处理用户注册、登录、认证、用户信息管理等功能 |
-| 内容服务 | content-service | 管理内容创建、发布、审核、查询等功能 |
-| 文件服务 | file-service | 处理文件上传、存储、下载、图片处理等功能 |
-| 交互服务 | interaction-service | 处理评论、点赞、收藏、分享等交互功能 |
-| 后台管理服务 | admin-service | 提供后台管理功能，包括系统配置、用户管理、内容管理等 |
-| 交易服务 | trade-service | 处理支付、订单、退款等交易相关功能 |
-| 渲染服务 | render-service | 负责前端页面的服务端渲染 |
-| 组件服务 | component-service | 管理和提供可复用UI组件的数据 |
-| 页面服务 | page-service | 管理页面布局、模板和结构 |
-| 站点服务 | site-service | 管理多站点配置、域名绑定、主题设置等 |
+| 服务名称    | 服务代码目录              | 功能描述                        |
+| ------- | ------------------- | --------------------------- |
+| API网关服务 | gateway-service     | 负责API路由、请求转发、负载均衡、接口聚合和统一认证 |
+| 用户服务    | user-service        | 处理用户注册、登录、认证、用户信息管理等功能      |
+| 内容服务    | content-service     | 管理内容创建、发布、审核、查询等功能          |
+| 文件服务    | file-service        | 处理文件上传、存储、下载、图片处理等功能        |
+| 交互服务    | interaction-service | 处理评论、点赞、收藏、分享等交互功能          |
+| 后台管理服务  | admin-service       | 提供后台管理功能，包括系统配置、用户管理、内容管理等  |
+| 交易服务    | trade-service       | 处理支付、订单、退款等交易相关功能           |
+| 渲染服务    | render-service      | 负责前端页面的服务端渲染                |
+| 组件服务    | component-service   | 管理和提供可复用UI组件的数据             |
+| 页面服务    | page-service        | 管理页面布局、模板和结构                |
+| 站点服务    | site-service        | 管理多站点配置、域名绑定、主题设置等          |
 
 ### 1.2 services 目录下的服务实现详情
 
 以下是 `services` 目录下所有微服务的当前实现状态：
 
-| 服务名称 | 目录 | 实现状态 | 重构情况 |
-|---------|-----|---------|---------|
-| API网关服务 | gateway-service | 已实现 | 已重构为标准结构 |
-| 用户服务 | user-service | 已实现 | 已重构为标准结构 |
-| 内容服务 | content-service | 已实现 | 已重构为标准结构 | 
-| 文件服务 | file-service | 已实现 | 已重构为标准结构 |
-| 交互服务 | interaction-service | 已实现 | 已重构为标准结构 |
-| 后台管理服务 | admin-service | 已实现 | 本次重构完成 |
-| 交易服务 | trade-service | 已实现 | 已从根目录迁移至services目录 |
-| 渲染服务 | render-service | 基础框架 | 已创建目录，待实现具体功能 |
-| 组件服务 | component-service | 基础框架 | 已创建目录，待实现具体功能 |
-| 页面服务 | page-service | 基础框架 | 已创建目录，待实现具体功能 |
-| 站点服务 | site-service | 基础框架 | 已创建目录，待实现具体功能 |
+| 服务名称    | 目录                  | 实现状态 | 重构情况               |
+| ------- | ------------------- | ---- | ------------------ |
+| API网关服务 | gateway-service     | 已实现  | 已重构为标准结构           |
+| 用户服务    | user-service        | 已实现  | 已重构为标准结构           |
+| 内容服务    | content-service     | 已实现  | 已重构为标准结构           |
+| 文件服务    | file-service        | 已实现  | 已重构为标准结构           |
+| 交互服务    | interaction-service | 已实现  | 已重构为标准结构           |
+| 后台管理服务  | admin-service       | 已实现  | 本次重构完成             |
+| 交易服务    | trade-service       | 已实现  | 已从根目录迁移至services目录 |
+| 渲染服务    | render-service      | 基础框架 | 已创建目录，待实现具体功能      |
+| 组件服务    | component-service   | 基础框架 | 已创建目录，待实现具体功能      |
+| 页面服务    | page-service        | 基础框架 | 已创建目录，待实现具体功能      |
+| 站点服务    | site-service        | 基础框架 | 已创建目录，待实现具体功能      |
 
 各服务的具体目录结构如下：
 
@@ -91,20 +91,23 @@ wz-backend-go/services/
 
 本次开发工作涉及的文件变更：
 
-| 类型 | 文件数量 | 说明 |
-|------|---------|------|
-| 修改的文件 | 1 | 更新项目根目录的 main.go，补充微服务配置 |
-| 新建的文件 | 72 | 所有微服务标准化目录结构文件 |
-| 总计 | 73 | 所有变更文件数量 |
+| 类型    | 文件数量 | 说明                       |
+| ----- | ---- | ------------------------ |
+| 修改的文件 | 1    | 更新项目根目录的 main.go，补充微服务配置 |
+| 新建的文件 | 72   | 所有微服务标准化目录结构文件           |
+| 总计    | 73   | 所有变更文件数量                 |
 
 具体新建文件包括：
+
 1. 已完全实现的微服务(7个)，每个服务约8个核心文件，共56个文件：
+   
    - gateway-service, user-service, content-service, file-service, interaction-service, admin-service, trade-service
    - 每个服务包含：main.go, config/config.go, config/config.yaml, internal/model/models.go, 
      internal/repository/repository.go, internal/service/servicecontext.go, 
      internal/server/routes.go, internal/middleware/相关中间件
 
 2. 基础框架服务(4个)，每个服务约4个基础文件，共16个文件：
+   
    - render-service, component-service, page-service, site-service
    - 每个服务包含：main.go及基础配置文件结构
 
@@ -166,27 +169,32 @@ services/<service-name>/
 重构工作分为以下几个阶段进行：
 
 1. **分析与规划**：
+   
    - 分析现有代码结构和依赖关系
    - 确定每个微服务的边界和责任
    - 规划标准目录结构和代码组织
 
 2. **创建基础框架**：
+   
    - 为每个服务创建标准目录结构
    - 编写配置文件模板
    - 创建主入口文件
 
 3. **迁移代码**：
+   
    - 将 API 定义迁移到各自服务的 api 目录
    - 将模型定义迁移到 internal/model
    - 将业务逻辑迁移到 internal/service
    - 将数据访问代码迁移到 internal/repository
 
 4. **重构接口**：
+   
    - 定义清晰的服务间调用接口
    - 使用依赖注入解耦各组件
    - 通过接口隔离原则优化依赖关系
 
 5. **测试与验证**：
+   
    - 编写单元测试和集成测试
    - 验证各服务功能正常
    - 检查服务间通信是否正常
@@ -320,4 +328,3 @@ services/admin-service/
 - 添加了对应的命令行参数（如 -render, -component 等）
 - 在服务选择逻辑中添加了对应判断条件
 - 确保服务正确启动和关闭
-

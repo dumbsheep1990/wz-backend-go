@@ -1,0 +1,172 @@
+syntax = "v1"
+
+info (
+	title: "角色权限管理API"
+	desc: "管理系统的角色权限管理相关API定义"
+	author: "System"
+	email: "admin@example.com"
+	version: "v1"
+)
+
+import "admin.api"
+import "admin_menu.api"
+
+// 角色权限管理相关API
+@server(
+	prefix: api/v1
+	middleware: [AdminJWT, AdminCasbin]
+)
+service admin {
+	@doc "获取角色列表"
+	@handler GetAuthorityList
+	post /admin/authority/getAuthorityList returns (GetAuthorityListResponse)
+	
+	@doc "创建角色"
+	@handler CreateAuthority
+	post /admin/authority/createAuthority (CreateAuthorityRequest) returns (CreateAuthorityResponse)
+	
+	@doc "更新角色"
+	@handler UpdateAuthority
+	put /admin/authority/updateAuthority (UpdateAuthorityRequest) returns (UpdateAuthorityResponse)
+	
+	@doc "删除角色"
+	@handler DeleteAuthority
+	post /admin/authority/deleteAuthority (DeleteAuthorityRequest) returns (Response)
+	
+	@doc "设置数据权限"
+	@handler SetDataAuthority
+	post /admin/authority/setDataAuthority (SetDataAuthorityRequest) returns (Response)
+	
+	@doc "获取角色按钮权限"
+	@handler GetAuthorityBtnList
+	post /admin/authorityBtn/getAuthorityBtn (GetAuthorityBtnRequest) returns (GetAuthorityBtnResponse)
+	
+	@doc "设置角色按钮权限"
+	@handler SetAuthorityBtn
+	post /admin/authorityBtn/setAuthorityBtn (SetAuthorityBtnRequest) returns (Response)
+	
+	@doc "获取Casbin策略"
+	@handler GetCasbinPolicy
+	post /admin/casbin/getPolicyPathByAuthorityId (GetPolicyPathRequest) returns (GetPolicyPathResponse)
+	
+	@doc "更新Casbin策略"
+	@handler UpdateCasbinPolicy
+	post /admin/casbin/updateCasbin (UpdateCasbinRequest) returns (Response)
+}
+
+// 角色信息
+type SysAuthority {
+	AuthorityId      string         `json:"authorityId"`
+	AuthorityName    string         `json:"authorityName"`
+	ParentId         string         `json:"parentId"`
+	DataAuthorityId  []SysAuthority `json:"dataAuthorityId"`
+	DefaultRouter    string         `json:"defaultRouter"`
+	CreatedAt        string         `json:"createdAt"`
+	UpdatedAt        string         `json:"updatedAt"`
+	DeletedAt        string         `json:"deletedAt,optional"`
+	Children         []SysAuthority `json:"children,optional"`
+	Menus            []MenuInfo     `json:"menus,optional"`
+	MenuIds          []int64        `json:"menuIds,optional"`
+}
+
+// 获取角色列表响应
+type GetAuthorityListResponse {
+	Code    int           `json:"code"`
+	Message string        `json:"message"`
+	Data    []SysAuthority `json:"data"`
+}
+
+// 创建角色请求
+type CreateAuthorityRequest {
+	AuthorityId   string `json:"authorityId"`
+	AuthorityName string `json:"authorityName"`
+	ParentId      string `json:"parentId"`
+}
+
+// 创建角色响应
+type CreateAuthorityResponse {
+	Code    int          `json:"code"`
+	Message string       `json:"message"`
+	Data    SysAuthority `json:"data"`
+}
+
+// 更新角色请求
+type UpdateAuthorityRequest {
+	AuthorityId   string `json:"authorityId"`
+	AuthorityName string `json:"authorityName"`
+	ParentId      string `json:"parentId"`
+}
+
+// 更新角色响应
+type UpdateAuthorityResponse {
+	Code    int          `json:"code"`
+	Message string       `json:"message"`
+	Data    SysAuthority `json:"data"`
+}
+
+// 删除角色请求
+type DeleteAuthorityRequest {
+	AuthorityId string `json:"authorityId"`
+}
+
+// 设置数据权限请求
+type SetDataAuthorityRequest {
+	AuthorityId     string   `json:"authorityId"`
+	DataAuthorityId []string `json:"dataAuthorityId"`
+}
+
+// 按钮权限
+type SysAuthorityBtn {
+	Id               int64  `json:"id"`
+	AuthorityId      string `json:"authorityId"`
+	MenuId           int64  `json:"menuId"`
+	Name             string `json:"name"`
+	ButtonName       string `json:"buttonName"`
+	CreatedAt        string `json:"createdAt"`
+	UpdatedAt        string `json:"updatedAt"`
+	DeletedAt        string `json:"deletedAt,optional"`
+}
+
+// 获取角色按钮权限请求
+type GetAuthorityBtnRequest {
+	AuthorityId string `json:"authorityId"`
+	MenuId      int64  `json:"menuId,optional"`
+}
+
+// 获取角色按钮权限响应
+type GetAuthorityBtnResponse {
+	Code    int               `json:"code"`
+	Message string            `json:"message"`
+	Data    []SysAuthorityBtn `json:"data"`
+}
+
+// 设置角色按钮权限请求
+type SetAuthorityBtnRequest {
+	AuthorityId string   `json:"authorityId"`
+	MenuId      int64    `json:"menuId"`
+	Buttons     []string `json:"buttons"`
+}
+
+// Casbin策略路径
+type CasbinPolicyPath {
+	Path   string `json:"path"`
+	Method string `json:"method"`
+}
+
+// 获取策略路径请求
+type GetPolicyPathRequest {
+	AuthorityId string `json:"authorityId"`
+}
+
+// 获取策略路径响应
+type GetPolicyPathResponse {
+	Code    int                `json:"code"`
+	Message string             `json:"message"`
+	Data    []CasbinPolicyPath `json:"data"`
+}
+
+// 更新Casbin请求
+type UpdateCasbinRequest {
+	AuthorityId string             `json:"authorityId"`
+	CasbinInfo  []CasbinPolicyPath `json:"casbinInfo"`
+} 

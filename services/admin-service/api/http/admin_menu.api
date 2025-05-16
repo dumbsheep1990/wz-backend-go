@@ -1,0 +1,97 @@
+syntax = "v1"
+
+info (
+	title: "菜单管理API"
+	desc: "管理系统的菜单管理相关API定义"
+	author: "System"
+	email: "admin@example.com"
+	version: "v1"
+)
+
+import "admin.api"
+
+// 菜单管理相关API
+@server(
+	prefix: api/v1
+	middleware: [AdminJWT, AdminCasbin]
+)
+service admin {
+	@doc "获取菜单列表"
+	@handler GetMenuList
+	post /admin/menu/getMenuList returns (GetMenuListResponse)
+	
+	@doc "获取指定角色的菜单"
+	@handler GetMenusByAuthority
+	post /admin/menu/getMenuAuthority (GetMenuAuthorityRequest) returns (GetMenuAuthorityResponse)
+	
+	@doc "添加菜单"
+	@handler AddMenu
+	post /admin/menu/addMenu (MenuInfo) returns (Response)
+	
+	@doc "更新菜单"
+	@handler UpdateMenu
+	post /admin/menu/updateMenu (MenuInfo) returns (Response)
+	
+	@doc "删除菜单"
+	@handler DeleteMenu
+	post /admin/menu/deleteMenu (DeleteMenuRequest) returns (Response)
+	
+	@doc "添加菜单权限"
+	@handler AddMenuAuthority
+	post /admin/menu/addMenuAuthority (AddMenuAuthorityRequest) returns (Response)
+}
+
+// 菜单信息
+type MenuInfo {
+	Id        int64      `json:"id"`
+	CreatedAt string     `json:"createdAt"`
+	UpdatedAt string     `json:"updatedAt"`
+	ParentId  int64      `json:"parentId"`
+	Path      string     `json:"path"`
+	Name      string     `json:"name"`
+	Hidden    bool       `json:"hidden"`
+	Component string     `json:"component"`
+	Sort      int        `json:"sort"`
+	Meta      MenuMeta   `json:"meta"`
+	Children  []MenuInfo `json:"children,optional"`
+}
+
+// 菜单元数据
+type MenuMeta {
+	KeepAlive        bool   `json:"keepAlive"`
+	DefaultMenu      bool   `json:"defaultMenu"`
+	Title            string `json:"title"`
+	Icon             string `json:"icon"`
+	CloseTab         bool   `json:"closeTab"`
+	CollapsibleWidth int    `json:"collapsibleWidth,optional"`
+}
+
+// 获取菜单列表响应
+type GetMenuListResponse {
+	Code    int        `json:"code"`
+	Message string     `json:"message"`
+	Data    []MenuInfo `json:"data"`
+}
+
+// 获取菜单权限请求
+type GetMenuAuthorityRequest {
+	AuthorityId string `json:"authorityId"`
+}
+
+// 获取菜单权限响应
+type GetMenuAuthorityResponse {
+	Code    int        `json:"code"`
+	Message string     `json:"message"`
+	Data    []MenuInfo `json:"data"`
+}
+
+// 删除菜单请求
+type DeleteMenuRequest {
+	Id int64 `json:"id"`
+}
+
+// 添加菜单权限请求
+type AddMenuAuthorityRequest {
+	Menus       []MenuInfo `json:"menus"`
+	AuthorityId string     `json:"authorityId"`
+} 
