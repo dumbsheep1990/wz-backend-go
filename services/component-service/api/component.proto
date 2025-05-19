@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package component;
+
+option go_package = ".;componentpb";
+
+service ComponentService {
+  rpc CreateComponent (CreateComponentRequest) returns (ComponentResponse);
+  rpc UpdateComponent (UpdateComponentRequest) returns (ComponentResponse);
+  rpc DeleteComponent (DeleteComponentRequest) returns (Empty);
+  rpc GetComponent (GetComponentRequest) returns (ComponentResponse);
+  rpc ListComponents (ListComponentsRequest) returns (ListComponentsResponse);
+}
+
+message CreateComponentRequest {
+  string name = 1;
+  uint32 category_id = 2;
+  string description = 3;
+  string content = 4;
+  string status = 5;
+  string version = 6;
+  string ext = 7;
+}
+
+message UpdateComponentRequest {
+  uint32 id = 1;
+  string name = 2;
+  uint32 category_id = 3;
+  string description = 4;
+  string content = 5;
+  string status = 6;
+  string version = 7;
+  string ext = 8;
+}
+
+message DeleteComponentRequest {
+  uint32 id = 1;
+}
+
+message GetComponentRequest {
+  uint32 id = 1;
+}
+
+message ListComponentsRequest {
+  uint32 category_id = 1;
+}
+
+message ComponentResponse {
+  Component component = 1;
+}
+
+message ListComponentsResponse {
+  repeated Component components = 1;
+}
+
+message Component {
+  uint32 id = 1;
+  string name = 2;
+  uint32 category_id = 3;
+  string description = 4;
+  string content = 5;
+  string status = 6;
+  string version = 7;
+  string ext = 8;
+}
+
+message Empty {} 

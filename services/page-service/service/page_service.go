@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 	"wz-backend-go/models"
+
+	"gorm.io/gorm"
 )
 
 // 模拟数据
@@ -201,3 +203,36 @@ func ReorderPages(siteID string, pageOrder []string) error {
 	}
 	return nil
 }
+
+// 数据库模型定义
+
+type PageCategory struct {
+	ID          uint      `gorm:"primaryKey" json:"id"`
+	Name        string    `gorm:"size:64;uniqueIndex" json:"name"`
+	Description string    `gorm:"size:255" json:"description"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+type Page struct {
+	ID          uint      `gorm:"primaryKey" json:"id"`
+	Name        string    `gorm:"size:64;index" json:"name"`
+	CategoryID  uint      `gorm:"index" json:"category_id"`
+	Description string    `gorm:"size:255" json:"description"`
+	Structure   string    `gorm:"type:text" json:"structure"`
+	Components  string    `gorm:"type:text" json:"components"` // 存储组件ID列表的JSON
+	Status      string    `gorm:"size:32" json:"status"`
+	Version     string    `gorm:"size:32" json:"version"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	Ext         string    `gorm:"type:text" json:"ext"`
+}
+
+// 自动迁移表结构
+func AutoMigrate(db *gorm.DB) error {
+	return db.AutoMigrate(&PageCategory{}, &Page{})
+}
+
+// 实现 proto 生成的 PageServiceServer 接口
+// func (s *PageServiceImpl) CreatePage(ctx context.Context, req *pagepb.CreatePageRequest) (*pagepb.PageResponse, error) { ... }
+// ... 其余接口同理 ...

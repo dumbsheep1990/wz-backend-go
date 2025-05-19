@@ -10,6 +10,14 @@ import (
 )
 
 // ListPages 获取站点下的所有页面
+// @Summary 获取站点下的所有页面
+// @Description 获取站点下的所有页面
+// @Tags Page
+// @Accept json
+// @Produce json
+// @Param siteId path string true "站点ID"
+// @Success 200 {array} models.Page
+// @Router /pages [get]
 func ListPages(c *gin.Context) {
 	siteID := c.Param("siteId")
 	tenantID, exists := c.Get("tenant_id")
@@ -34,6 +42,15 @@ func ListPages(c *gin.Context) {
 }
 
 // GetPage 获取单个页面
+// @Summary 获取单个页面
+// @Description 获取单个页面
+// @Tags Page
+// @Accept json
+// @Produce json
+// @Param siteId path string true "站点ID"
+// @Param id path string true "页面ID"
+// @Success 200 {object} models.Page
+// @Router /pages/{siteId}/{id} [get]
 func GetPage(c *gin.Context) {
 	siteID := c.Param("siteId")
 	pageID := c.Param("id")
@@ -59,6 +76,14 @@ func GetPage(c *gin.Context) {
 }
 
 // CreatePage 创建新页面
+// @Summary 创建页面
+// @Description 创建一个新的页面
+// @Tags Page
+// @Accept json
+// @Produce json
+// @Param data body models.Page true "页面信息"
+// @Success 201 {object} models.Page
+// @Router /pages [post]
 func CreatePage(c *gin.Context) {
 	siteID := c.Param("siteId")
 	tenantID, exists := c.Get("tenant_id")
@@ -102,6 +127,16 @@ func CreatePage(c *gin.Context) {
 }
 
 // UpdatePage 更新页面
+// @Summary 更新页面
+// @Description 更新页面的信息
+// @Tags Page
+// @Accept json
+// @Produce json
+// @Param siteId path string true "站点ID"
+// @Param id path string true "页面ID"
+// @Param data body models.Page true "页面信息"
+// @Success 200 {object} models.Page
+// @Router /pages/{siteId}/{id} [put]
 func UpdatePage(c *gin.Context) {
 	siteID := c.Param("siteId")
 	pageID := c.Param("id")
@@ -146,6 +181,15 @@ func UpdatePage(c *gin.Context) {
 }
 
 // DeletePage 删除页面
+// @Summary 删除页面
+// @Description 删除指定的页面
+// @Tags Page
+// @Accept json
+// @Produce json
+// @Param siteId path string true "站点ID"
+// @Param id path string true "页面ID"
+// @Success 200 {object} gin.H
+// @Router /pages/{siteId}/{id} [delete]
 func DeletePage(c *gin.Context) {
 	siteID := c.Param("siteId")
 	pageID := c.Param("id")
@@ -182,6 +226,15 @@ func DeletePage(c *gin.Context) {
 }
 
 // SetHomepage 设置页面为首页
+// @Summary 设置页面为首页
+// @Description 将指定的页面设置为首页
+// @Tags Page
+// @Accept json
+// @Produce json
+// @Param siteId path string true "站点ID"
+// @Param id path string true "页面ID"
+// @Success 200 {object} models.Page
+// @Router /pages/{siteId}/{id}/set-homepage [put]
 func SetHomepage(c *gin.Context) {
 	siteID := c.Param("siteId")
 	pageID := c.Param("id")
@@ -214,6 +267,15 @@ func SetHomepage(c *gin.Context) {
 }
 
 // ReorderPages 重新排序页面
+// @Summary 重新排序页面
+// @Description 重新排序页面
+// @Tags Page
+// @Accept json
+// @Produce json
+// @Param siteId path string true "站点ID"
+// @Param data body []string true "页面顺序"
+// @Success 200 {object} gin.H
+// @Router /pages/{siteId}/reorder [put]
 func ReorderPages(c *gin.Context) {
 	siteID := c.Param("siteId")
 	tenantID, exists := c.Get("tenant_id")
@@ -240,4 +302,79 @@ func ReorderPages(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "页面顺序已更新"})
+}
+
+// CreateCategory 创建新分类
+// @Summary 创建新分类
+// @Description 创建一个新的分类
+// @Tags Page
+// @Accept json
+// @Produce json
+// @Param data body models.PageCategory true "分类信息"
+// @Success 201 {object} models.PageCategory
+// @Router /categories [post]
+func CreateCategory(c *gin.Context) {
+	siteID := c.Param("siteId")
+	tenantID, exists := c.Get("tenant_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "需要认证"})
+		return
+	}
+
+	// 校验站点所有权
+	if !service.CheckSiteAccess(siteID, tenantID.(string)) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "无权访问该站点"})
+		return
+	}
+
+	var category models.PageCategory
+	if err := c.ShouldBindJSON(&category); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 设置分类属性
+	category.SiteID = siteID
+	category.CreatedAt = time.Now()
+	category.UpdatedAt = time.Now()
+
+	createdCategory, err := service.CreateCategory(category)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, createdCategory)
+}
+
+// ListCategories 获取站点下的所有分类
+// @Summary 获取站点下的所有分类
+// @Description 获取站点下的所有分类
+// @Tags Page
+// @Accept json
+// @Produce json
+// @Param siteId path string true "站点ID"
+// @Success 200 {array} models.PageCategory
+// @Router /categories [get]
+func ListCategories(c *gin.Context) {
+	siteID := c.Param("siteId")
+	tenantID, exists := c.Get("tenant_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "需要认证"})
+		return
+	}
+
+	// 校验站点所有权
+	if !service.CheckSiteAccess(siteID, tenantID.(string)) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "无权访问该站点"})
+		return
+	}
+
+	categories, err := service.ListCategories(siteID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, categories)
 }

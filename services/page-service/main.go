@@ -5,8 +5,13 @@ import (
 	"os"
 	"wz-backend-go/middleware"
 	"wz-backend-go/services/page-service/handlers"
+	"wz-backend-go/services/page-service/service"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -59,10 +64,23 @@ func main() {
 		sectionGroup.PUT("/reorder", handlers.ReorderSections)
 	}
 
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
 	// 获取服务端口
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8082"
+	}
+
+	// 初始化数据库连接
+	dsn := "root:password@tcp(127.0.0.1:3306)/page_db?charset=utf8mb4&parseTime=True&loc=Local"
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	if err != nil {
+		log.Fatalf("failed to connect database: %v", err)
+	}
+
+	if err := service.AutoMigrate(db); err != nil {
+		log.Fatalf("failed to migrate database: %v", err)
 	}
 
 	// 启动服务

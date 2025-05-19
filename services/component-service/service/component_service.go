@@ -3,7 +3,10 @@ package service
 import (
 	"errors"
 	"fmt"
+	"time"
 	"wz-backend-go/models"
+
+	"gorm.io/gorm"
 )
 
 // 模拟组件分类数据
@@ -323,3 +326,35 @@ func ReorderComponents(siteID string, pageID string, sectionID string, component
 
 	return errors.New("区块没有组件")
 }
+
+// 数据库模型定义
+
+type ComponentCategory struct {
+	ID          uint      `gorm:"primaryKey" json:"id"`
+	Name        string    `gorm:"size:64;uniqueIndex" json:"name"`
+	Description string    `gorm:"size:255" json:"description"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+type Component struct {
+	ID          uint      `gorm:"primaryKey" json:"id"`
+	Name        string    `gorm:"size:64;index" json:"name"`
+	CategoryID  uint      `gorm:"index" json:"category_id"`
+	Description string    `gorm:"size:255" json:"description"`
+	Content     string    `gorm:"type:text" json:"content"`
+	Status      string    `gorm:"size:32" json:"status"`
+	Version     string    `gorm:"size:32" json:"version"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	Ext         string    `gorm:"type:text" json:"ext"`
+}
+
+// 自动迁移表结构
+func AutoMigrate(db *gorm.DB) error {
+	return db.AutoMigrate(&ComponentCategory{}, &Component{})
+}
+
+// 实现 proto 生成的 ComponentServiceServer 接口
+// func (s *ComponentServiceImpl) CreateComponent(ctx context.Context, req *componentpb.CreateComponentRequest) (*componentpb.ComponentResponse, error) { ... }
+// ... 其余接口同理 ...

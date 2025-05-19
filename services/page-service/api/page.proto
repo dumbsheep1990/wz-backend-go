@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package page;
+
+option go_package = ".;pagepb";
+
+service PageService {
+  rpc CreatePage (CreatePageRequest) returns (PageResponse);
+  rpc UpdatePage (UpdatePageRequest) returns (PageResponse);
+  rpc DeletePage (DeletePageRequest) returns (Empty);
+  rpc GetPage (GetPageRequest) returns (PageResponse);
+  rpc ListPages (ListPagesRequest) returns (ListPagesResponse);
+}
+
+message CreatePageRequest {
+  string name = 1;
+  uint32 category_id = 2;
+  string description = 3;
+  string structure = 4;
+  string components = 5;
+  string status = 6;
+  string version = 7;
+  string ext = 8;
+}
+
+message UpdatePageRequest {
+  uint32 id = 1;
+  string name = 2;
+  uint32 category_id = 3;
+  string description = 4;
+  string structure = 5;
+  string components = 6;
+  string status = 7;
+  string version = 8;
+  string ext = 9;
+}
+
+message DeletePageRequest {
+  uint32 id = 1;
+}
+
+message GetPageRequest {
+  uint32 id = 1;
+}
+
+message ListPagesRequest {
+  uint32 category_id = 1;
+}
+
+message PageResponse {
+  Page page = 1;
+}
+
+message ListPagesResponse {
+  repeated Page pages = 1;
+}
+
+message Page {
+  uint32 id = 1;
+  string name = 2;
+  uint32 category_id = 3;
+  string description = 4;
+  string structure = 5;
+  string components = 6;
+  string status = 7;
+  string version = 8;
+  string ext = 9;
+}
+
+message Empty {} 
