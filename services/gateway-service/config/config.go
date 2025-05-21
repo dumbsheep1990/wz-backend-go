@@ -69,17 +69,22 @@ func DefaultConfig() Config {
 			},
 			{
 				Name:        "interaction-service",
+				URL:         "http://localhost:8085",
+				RequireAuth: true,
+			},
+			{
+				Name:        "community-service",
 				URL:         "http://localhost:8084",
 				RequireAuth: true,
 			},
 			{
 				Name:        "admin-service",
-				URL:         "http://localhost:8085",
+				URL:         "http://localhost:8086",
 				RequireAuth: true,
 			},
 			{
 				Name:        "render-service",
-				URL:         "http://localhost:8086",
+				URL:         "http://localhost:8087",
 				RequireAuth: false,
 			},
 		},

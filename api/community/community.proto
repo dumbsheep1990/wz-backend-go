@@ -1,0 +1,314 @@
+syntax = "proto3";
+
+package community;
+
+option go_package = "github.com/yourusername/wz-backend-go/api/community";
+
+// Community service definition
+service CommunityService {
+  // Community operations
+  rpc ListCommunities(ListCommunitiesRequest) returns (ListCommunitiesResponse);
+  rpc GetCommunity(GetCommunityRequest) returns (Community);
+  rpc CreateCommunity(CreateCommunityRequest) returns (Community);
+  rpc UpdateCommunity(UpdateCommunityRequest) returns (Community);
+  rpc DeleteCommunity(DeleteCommunityRequest) returns (DeleteResponse);
+
+  // Group operations
+  rpc ListGroups(ListGroupsRequest) returns (ListGroupsResponse);
+  rpc GetGroup(GetGroupRequest) returns (Group);
+  rpc CreateGroup(CreateGroupRequest) returns (Group);
+  rpc UpdateGroup(UpdateGroupRequest) returns (Group);
+  rpc DeleteGroup(DeleteGroupRequest) returns (DeleteResponse);
+  rpc JoinGroup(JoinGroupRequest) returns (JoinGroupResponse);
+  rpc LeaveGroup(LeaveGroupRequest) returns (LeaveGroupResponse);
+
+  // Post operations
+  rpc ListPosts(ListPostsRequest) returns (ListPostsResponse);
+  rpc GetPost(GetPostRequest) returns (Post);
+  rpc CreatePost(CreatePostRequest) returns (Post);
+  rpc UpdatePost(UpdatePostRequest) returns (Post);
+  rpc DeletePost(DeletePostRequest) returns (DeleteResponse);
+  rpc LikePost(LikePostRequest) returns (LikePostResponse);
+  rpc ViewPost(ViewPostRequest) returns (ViewPostResponse);
+
+  // Comment operations
+  rpc ListComments(ListCommentsRequest) returns (ListCommentsResponse);
+  rpc CreateComment(CreateCommentRequest) returns (Comment);
+  rpc DeleteComment(DeleteCommentRequest) returns (DeleteResponse);
+}
+
+// Community entity
+message Community {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string owner_id = 4;
+  string owner_name = 5;
+  string create_time = 6;
+  CommunityStatus status = 7;
+  repeated string tags = 8;
+  string location = 9;
+  int32 group_count = 10;
+  int32 member_count = 11;
+  int32 post_count = 12;
+}
+
+enum CommunityStatus {
+  COMMUNITY_STATUS_UNSPECIFIED = 0;
+  ACTIVE = 1;
+  INACTIVE = 2;
+  DELETED = 3;
+}
+
+// Group entity
+message Group {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string community_id = 4;
+  string owner_id = 5;
+  string owner_name = 6;
+  string create_time = 7;
+  GroupStatus status = 8;
+  repeated string members = 9;
+  repeated string tags = 10;
+  int32 member_count = 11;
+  int32 post_count = 12;
+}
+
+enum GroupStatus {
+  GROUP_STATUS_UNSPECIFIED = 0;
+  ACTIVE = 1;
+  INACTIVE = 2;
+  DELETED = 3;
+}
+
+// Post entity
+message Post {
+  string id = 1;
+  string title = 2;
+  string content = 3;
+  string author_id = 4;
+  string author_name = 5;
+  string community_id = 6;
+  string group_id = 7;
+  string create_time = 8;
+  string update_time = 9;
+  PostStatus status = 10;
+  int32 like_count = 11;
+  int32 view_count = 12;
+  int32 comment_count = 13;
+  repeated string tags = 14;
+  repeated string images = 15;
+}
+
+enum PostStatus {
+  POST_STATUS_UNSPECIFIED = 0;
+  ACTIVE = 1;
+  INACTIVE = 2;
+  DELETED = 3;
+}
+
+// Comment entity
+message Comment {
+  string id = 1;
+  string content = 2;
+  string author_id = 3;
+  string author_name = 4;
+  string post_id = 5;
+  string parent_id = 6;
+  string create_time = 7;
+  CommentStatus status = 8;
+  int32 like_count = 9;
+}
+
+enum CommentStatus {
+  COMMENT_STATUS_UNSPECIFIED = 0;
+  ACTIVE = 1;
+  DELETED = 2;
+}
+
+// Request/Response messages
+message ListCommunitiesRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+  string filter = 3;
+}
+
+message ListCommunitiesResponse {
+  repeated Community communities = 1;
+  string next_page_token = 2;
+}
+
+message GetCommunityRequest {
+  string id = 1;
+}
+
+message CreateCommunityRequest {
+  string name = 1;
+  string description = 2;
+  string owner_id = 3;
+  string owner_name = 4;
+  repeated string tags = 5;
+  string location = 6;
+}
+
+message UpdateCommunityRequest {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  repeated string tags = 4;
+  string location = 5;
+  CommunityStatus status = 6;
+}
+
+message DeleteCommunityRequest {
+  string id = 1;
+}
+
+message ListGroupsRequest {
+  string community_id = 1;
+  int32 page_size = 2;
+  string page_token = 3;
+  string filter = 4;
+}
+
+message ListGroupsResponse {
+  repeated Group groups = 1;
+  string next_page_token = 2;
+}
+
+message GetGroupRequest {
+  string id = 1;
+}
+
+message CreateGroupRequest {
+  string name = 1;
+  string description = 2;
+  string community_id = 3;
+  string owner_id = 4;
+  string owner_name = 5;
+  repeated string tags = 6;
+}
+
+message UpdateGroupRequest {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  repeated string tags = 4;
+  GroupStatus status = 5;
+}
+
+message DeleteGroupRequest {
+  string id = 1;
+}
+
+message JoinGroupRequest {
+  string group_id = 1;
+  string user_id = 2;
+  string user_name = 3;
+}
+
+message JoinGroupResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message LeaveGroupRequest {
+  string group_id = 1;
+  string user_id = 2;
+}
+
+message LeaveGroupResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message ListPostsRequest {
+  string community_id = 1;
+  string group_id = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+  string filter = 5;
+}
+
+message ListPostsResponse {
+  repeated Post posts = 1;
+  string next_page_token = 2;
+}
+
+message GetPostRequest {
+  string id = 1;
+}
+
+message CreatePostRequest {
+  string title = 1;
+  string content = 2;
+  string author_id = 3;
+  string author_name = 4;
+  string community_id = 5;
+  string group_id = 6;
+  repeated string tags = 7;
+  repeated string images = 8;
+}
+
+message UpdatePostRequest {
+  string id = 1;
+  string title = 2;
+  string content = 3;
+  repeated string tags = 4;
+  repeated string images = 5;
+  PostStatus status = 6;
+}
+
+message DeletePostRequest {
+  string id = 1;
+}
+
+message LikePostRequest {
+  string post_id = 1;
+  string user_id = 2;
+  bool like = 3;  // true for like, false for unlike
+}
+
+message LikePostResponse {
+  int32 like_count = 1;
+}
+
+message ViewPostRequest {
+  string post_id = 1;
+  string user_id = 2;
+}
+
+message ViewPostResponse {
+  int32 view_count = 1;
+}
+
+message ListCommentsRequest {
+  string post_id = 1;
+  string parent_id = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+
+message ListCommentsResponse {
+  repeated Comment comments = 1;
+  string next_page_token = 2;
+}
+
+message CreateCommentRequest {
+  string content = 1;
+  string author_id = 2;
+  string author_name = 3;
+  string post_id = 4;
+  string parent_id = 5;
+}
+
+message DeleteCommentRequest {
+  string id = 1;
+}
+
+message DeleteResponse {
+  bool success = 1;
+  string message = 2;
+}
