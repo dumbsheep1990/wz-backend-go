@@ -1,0 +1,123 @@
+package main
+
+import (
+	"log"
+	"net"
+	"time"
+
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
+	"google.golang.org/grpc"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
+
+	pb "github.com/wz-project/wz-backend-go/api/community"
+	"github.com/wz-project/wz-backend-go/services/community-service/handlers"
+	"github.com/wz-project/wz-backend-go/services/community-service/models"
+	"github.com/wz-project/wz-backend-go/services/community-service/service"
+)
+
+const (
+	grpcPort = ":50054"  // Choose an available port for gRPC
+	httpPort = ":8084"   // Choose an available port for HTTP
+	dsn      = "user:password@tcp(127.0.0.1:3306)/wz_community?charset=utf8mb4&parseTime=True&loc=Local" // 替换为实际的数据库连接信息
+)
+
+// 初始化数据库连接
+func initDB() *gorm.DB {
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+
+	// 自动迁移表结构
+	err = db.AutoMigrate(
+		&models.SimilarApplication{},
+		// 添加其他需要迁移的模型
+	)
+	if err != nil {
+		log.Fatalf("Failed to migrate database: %v", err)
+	}
+
+	return db
+}
+
+// setupGRPCServer 设置gRPC服务器
+func setupGRPCServer(service *service.CommunityServiceServer) {
+	lis, err := net.Listen("tcp", grpcPort)
+	if err != nil {
+		log.Fatalf("Failed to listen: %v", err)
+	}
+	
+	grpcServer := grpc.NewServer()
+	pb.RegisterCommunityServiceServer(grpcServer, service)
+	
+	log.Printf("gRPC server started on port %s", grpcPort)
+	go func() {
+		if err := grpcServer.Serve(lis); err != nil {
+			log.Fatalf("Failed to serve: %v", err)
+		}
+	}()
+}
+
+// setupRESTServer 使用Gin设置REST服务器
+func setupRESTServer(service *service.CommunityServiceServer, db *gorm.DB) {
+	router := gin.Default()
+	
+	// 配置CORS中间件
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-User-ID", "X-User-Name"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
+	
+	// 设置静态文件服务
+	router.Static("/static", "./static")
+	
+	// 注册API路由
+	handlers.RegisterRoutes(router, service)
+	
+	// 注册申请建同路由
+	handlers.RegisterSimilarApplicationRoutes(router, db)
+	
+	// 注册分类路由
+	handlers.RegisterCategoryRoutes(router)
+	
+	// 注册认证路由
+	handlers.RegisterAuthRoutes(router)
+	
+	// 注册健康检查路由
+	handlers.RegisterHealthRoutes(router)
+	
+	// 前端页面路由，单页应用支持
+	router.NoRoute(func(c *gin.Context) {
+		c.File("./static/index.html")
+	})
+	
+	log.Printf("REST服务器已在端口 %s 启动", httpPort)
+	go func() {
+		if err := router.Run(httpPort); err != nil {
+			log.Fatalf("启动服务器失败: %v", err)
+		}
+	}()
+}
+
+func main() {
+	// 初始化数据库
+	db := initDB()
+	
+	// 创建服务
+	service := service.NewCommunityServiceServer()
+	
+	// 启动gRPC服务器
+	setupGRPCServer(service)
+	
+	// 启动REST服务器，传入数据库连接
+	setupRESTServer(service, db)
+	
+	// 保持主goroutine不退出
+	select {}
+}
