@@ -4,13 +4,14 @@ import (
 	"errors"
 	"fmt"
 	"time"
-	"wz-backend-go/models"
+	"wz-backend-go/models/common"
+	"wz-backend-go/models/page"
 
 	"gorm.io/gorm"
 )
 
 // 模拟数据
-var pages = map[string][]models.Page{
+var pages = map[string][]page.Page{
 	"1": {
 		{
 			ID:          "page1",
@@ -22,7 +23,7 @@ var pages = map[string][]models.Page{
 			Keywords:    []string{"企业", "官网", "首页"},
 			IsHomepage:  true,
 			Layout:      "default",
-			Sections:    []models.Section{},
+			Sections:    []page.Section{},
 			CreatedAt:   time.Now().Add(-24 * time.Hour),
 			UpdatedAt:   time.Now().Add(-12 * time.Hour),
 			SortOrder:   0,
@@ -37,7 +38,7 @@ var pages = map[string][]models.Page{
 			Keywords:    []string{"关于", "企业文化", "团队"},
 			IsHomepage:  false,
 			Layout:      "default",
-			Sections:    []models.Section{},
+			Sections:    []page.Section{},
 			CreatedAt:   time.Now().Add(-24 * time.Hour),
 			UpdatedAt:   time.Now().Add(-12 * time.Hour),
 			SortOrder:   1,
@@ -59,15 +60,15 @@ func CheckSiteAccess(siteID string, tenantID string) bool {
 }
 
 // ListPages 获取站点的所有页面
-func ListPages(siteID string) ([]models.Page, error) {
+func ListPages(siteID string) ([]page.Page, error) {
 	if sitePages, exists := pages[siteID]; exists {
 		return sitePages, nil
 	}
-	return []models.Page{}, nil
+	return []page.Page{}, nil
 }
 
 // GetPage 获取单个页面
-func GetPage(siteID string, pageID string) (models.Page, error) {
+func GetPage(siteID string, pageID string) (page.Page, error) {
 	if sitePages, exists := pages[siteID]; exists {
 		for _, page := range sitePages {
 			if page.ID == pageID {
@@ -75,11 +76,11 @@ func GetPage(siteID string, pageID string) (models.Page, error) {
 			}
 		}
 	}
-	return models.Page{}, errors.New("页面不存在")
+	return page.Page{}, errors.New("页面不存在")
 }
 
 // CreatePage 创建新页面
-func CreatePage(page models.Page) (models.Page, error) {
+func CreatePage(page page.Page) (page.Page, error) {
 	// 生成一个简单的ID
 	page.ID = fmt.Sprintf("page%d", len(pages[page.SiteID])+1)
 
@@ -88,7 +89,7 @@ func CreatePage(page models.Page) (models.Page, error) {
 		page.SortOrder = len(sitePages)
 	} else {
 		page.SortOrder = 0
-		pages[page.SiteID] = []models.Page{}
+		pages[page.SiteID] = []page.Page{}
 	}
 
 	// 添加到页面集合
@@ -98,7 +99,7 @@ func CreatePage(page models.Page) (models.Page, error) {
 }
 
 // UpdatePage 更新页面
-func UpdatePage(page models.Page) (models.Page, error) {
+func UpdatePage(page page.Page) (page.Page, error) {
 	if sitePages, exists := pages[page.SiteID]; exists {
 		for i, p := range sitePages {
 			if p.ID == page.ID {
@@ -112,7 +113,7 @@ func UpdatePage(page models.Page) (models.Page, error) {
 			}
 		}
 	}
-	return models.Page{}, errors.New("页面不存在")
+	return page.Page{}, errors.New("页面不存在")
 }
 
 // DeletePage 删除页面
@@ -159,7 +160,7 @@ func UnsetOtherHomepages(siteID string, exceptPageID ...string) error {
 }
 
 // SetHomepage 设置页面为首页
-func SetHomepage(siteID string, pageID string) (models.Page, error) {
+func SetHomepage(siteID string, pageID string) (page.Page, error) {
 	if sitePages, exists := pages[siteID]; exists {
 		for i, page := range sitePages {
 			if page.ID == pageID {
@@ -170,7 +171,7 @@ func SetHomepage(siteID string, pageID string) (models.Page, error) {
 			}
 		}
 	}
-	return models.Page{}, errors.New("页面不存在")
+	return page.Page{}, errors.New("页面不存在")
 }
 
 // ReorderPages 重新排序页面
@@ -181,7 +182,7 @@ func ReorderPages(siteID string, pageOrder []string) error {
 		}
 
 		// 创建新的排序页面切片
-		newOrder := make([]models.Page, len(sitePages))
+		newOrder := make([]page.Page, len(sitePages))
 		for i, pageID := range pageOrder {
 			found := false
 			for _, page := range sitePages {

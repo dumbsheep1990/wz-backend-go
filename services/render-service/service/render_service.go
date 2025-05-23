@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"html/template"
 	"strings"
-	"wz-backend-go/models"
+	"wz-backend-go/models/common"
+	"wz-backend-go/models/page"
+	"wz-backend-go/models/site"
 )
 
 // 模拟站点数据
-var sites = []models.Site{
+var sites = []site.Site{
 	{
 		ID:          "1",
 		Name:        "企业展示站点",
@@ -19,7 +21,7 @@ var sites = []models.Site{
 		Logo:        "/img/logo1.png",
 		Favicon:     "/img/favicon1.ico",
 		TenantID:    "tenant_456",
-		Theme: models.ThemeConfig{
+		Theme: site.ThemeConfig{
 			PrimaryColor:    "#FF5722",
 			SecondaryColor:  "#2196F3",
 			AccentColor:     "#4CAF50",
@@ -30,9 +32,9 @@ var sites = []models.Site{
 			BorderRadius:    "medium",
 			CustomCSS:       "",
 		},
-		Navigation: models.Navigation{
+		Navigation: site.Navigation{
 			Type:  "horizontal",
-			Items: []models.NavigationItem{},
+			Items: []site.NavigationItem{},
 			Style: map[string]string{},
 		},
 		Status: "published",
@@ -40,7 +42,7 @@ var sites = []models.Site{
 }
 
 // 模拟页面数据
-var pages = map[string][]models.Page{
+var pages = map[string][]page.Page{
 	"1": {
 		{
 			ID:          "page1",
@@ -52,7 +54,7 @@ var pages = map[string][]models.Page{
 			Keywords:    []string{"企业", "官网", "首页"},
 			IsHomepage:  true,
 			Layout:      "default",
-			Sections:    []models.Section{},
+			Sections:    []page.Section{},
 		},
 		{
 			ID:          "page2",
@@ -64,13 +66,13 @@ var pages = map[string][]models.Page{
 			Keywords:    []string{"关于", "企业文化", "团队"},
 			IsHomepage:  false,
 			Layout:      "default",
-			Sections:    []models.Section{},
+			Sections:    []page.Section{},
 		},
 	},
 }
 
 // 区块数据
-var sections = map[string][]models.Section{
+var sections = map[string][]page.Section{
 	"page1": {
 		{
 			ID:         "section1",
@@ -78,7 +80,7 @@ var sections = map[string][]models.Section{
 			Type:       "header",
 			Title:      "页面头部",
 			Settings:   map[string]interface{}{"backgroundColor": "#f5f5f5"},
-			Components: []models.Component{},
+			Components: []page.Component{},
 			Style:      map[string]interface{}{"padding": "20px"},
 			SortOrder:  0,
 		},
@@ -88,7 +90,7 @@ var sections = map[string][]models.Section{
 			Type:       "content",
 			Title:      "主要内容",
 			Settings:   map[string]interface{}{"columns": 1},
-			Components: []models.Component{},
+			Components: []page.Component{},
 			Style:      map[string]interface{}{"margin": "20px 0"},
 			SortOrder:  1,
 		},
@@ -96,7 +98,7 @@ var sections = map[string][]models.Section{
 }
 
 // 组件数据
-var components = map[string][]models.Component{
+var components = map[string][]page.Component{
 	"section1": {
 		{
 			ID:        "comp1",
@@ -169,7 +171,7 @@ func CheckSiteAccess(siteID string, tenantID string) bool {
 }
 
 // GetSiteWithAllPages 获取站点及其所有页面
-func GetSiteWithAllPages(siteID string) (models.Site, error) {
+func GetSiteWithAllPages(siteID string) (site.Site, error) {
 	for _, site := range sites {
 		if site.ID == siteID {
 			// 找到站点后，加载所有页面
@@ -191,15 +193,15 @@ func GetSiteWithAllPages(siteID string) (models.Site, error) {
 			return site, nil
 		}
 	}
-	return models.Site{}, errors.New("站点不存在")
+	return site.Site{}, errors.New("站点不存在")
 }
 
 // GetSiteAndPage 获取站点和特定页面
-func GetSiteAndPage(siteID string, pageID string) (models.Site, models.Page, error) {
+func GetSiteAndPage(siteID string, pageID string) (site.Site, page.Page, error) {
 	// 获取站点
 	site, err := GetSite(siteID)
 	if err != nil {
-		return models.Site{}, models.Page{}, err
+		return site.Site{}, page.Page{}, err
 	}
 
 	// 获取页面
@@ -219,13 +221,13 @@ func GetSiteAndPage(siteID string, pageID string) (models.Site, models.Page, err
 		}
 	}
 
-	return models.Site{}, models.Page{}, errors.New("页面不存在")
+	return site.Site{}, page.Page{}, errors.New("页面不存在")
 }
 
 // GenerateSitePreview 生成站点预览HTML
-func GenerateSitePreview(site models.Site, device string) (string, error) {
+func GenerateSitePreview(site site.Site, device string) (string, error) {
 	// 找到首页
-	var homepage models.Page
+	var homepage page.Page
 	for _, page := range site.Pages {
 		if page.IsHomepage {
 			homepage = page
@@ -242,7 +244,7 @@ func GenerateSitePreview(site models.Site, device string) (string, error) {
 }
 
 // GeneratePagePreview 生成页面预览HTML
-func GeneratePagePreview(site models.Site, page models.Page, device string) (string, error) {
+func GeneratePagePreview(site site.Site, page page.Page, device string) (string, error) {
 	// 通用HTML模板
 	htmlTemplate := `
 <!DOCTYPE html>
@@ -394,30 +396,30 @@ func GeneratePagePreview(site models.Site, page models.Page, device string) (str
 }
 
 // GetSiteByDomain 根据域名获取站点
-func GetSiteByDomain(domain string) (models.Site, error) {
+func GetSiteByDomain(domain string) (site.Site, error) {
 	for _, site := range sites {
 		if site.Domain == domain && site.Status == "published" {
 			return site, nil
 		}
 	}
-	return models.Site{}, errors.New("站点不存在或未发布")
+	return site.Site{}, errors.New("站点不存在或未发布")
 }
 
 // GetSite 获取站点信息
-func GetSite(siteID string) (models.Site, error) {
+func GetSite(siteID string) (site.Site, error) {
 	for _, site := range sites {
 		if site.ID == siteID {
 			return site, nil
 		}
 	}
-	return models.Site{}, errors.New("站点不存在")
+	return site.Site{}, errors.New("站点不存在")
 }
 
 // GetHomePage 获取站点首页
-func GetHomePage(siteID string) (models.Page, error) {
+func GetHomePage(siteID string) (page.Page, error) {
 	sitePages, exists := pages[siteID]
 	if !exists {
-		return models.Page{}, errors.New("站点没有页面")
+		return page.Page{}, errors.New("站点没有页面")
 	}
 
 	for _, page := range sitePages {
@@ -436,14 +438,14 @@ func GetHomePage(siteID string) (models.Page, error) {
 		}
 	}
 
-	return models.Page{}, errors.New("找不到首页")
+	return page.Page{}, errors.New("找不到首页")
 }
 
 // GetPageBySlug 通过slug获取页面
-func GetPageBySlug(siteID string, slug string) (models.Page, error) {
+func GetPageBySlug(siteID string, slug string) (page.Page, error) {
 	sitePages, exists := pages[siteID]
 	if !exists {
-		return models.Page{}, errors.New("站点没有页面")
+		return page.Page{}, errors.New("站点没有页面")
 	}
 
 	// 规范化slug
@@ -465,7 +467,7 @@ func GetPageBySlug(siteID string, slug string) (models.Page, error) {
 		}
 	}
 
-	return models.Page{}, fmt.Errorf("找不到slug为%s的页面", slug)
+	return page.Page{}, fmt.Errorf("找不到slug为%s的页面", slug)
 }
 
 // IsSitePublished 检查站点是否已发布
@@ -479,7 +481,7 @@ func IsSitePublished(siteID string) bool {
 }
 
 // GeneratePageHTML 生成页面HTML
-func GeneratePageHTML(site models.Site, page models.Page) (string, error) {
+func GeneratePageHTML(site site.Site, page page.Page) (string, error) {
 	// HTML模板 - 这里简化处理，实际中会更复杂
 	htmlTemplate := `
 <!DOCTYPE html>

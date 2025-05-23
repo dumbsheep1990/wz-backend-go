@@ -4,7 +4,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"time"
-	"wz-backend-go/models"
+	"wz-backend-go/models/common"
+	"wz-backend-go/models/site"
 	"wz-backend-go/services/site-service/service"
 )
 
@@ -51,7 +52,7 @@ func GetSite(c *gin.Context) {
 
 // CreateSite 创建新站点
 func CreateSite(c *gin.Context) {
-	var site models.Site
+	var site site.Site
 	if err := c.ShouldBindJSON(&site); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -88,7 +89,7 @@ func UpdateSite(c *gin.Context) {
 		return
 	}
 	
-	var site models.Site
+	var site site.Site
 	if err := c.ShouldBindJSON(&site); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

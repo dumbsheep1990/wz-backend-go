@@ -3,11 +3,11 @@ package service
 import (
 	"errors"
 	"strings"
-	"wz-backend-go/models"
+	"wz-backend-go/models/site"
 )
 
 // 模拟模板数据
-var templates = []models.SiteTemplate{
+var templates = []site.SiteTemplate{
 	{
 		ID:          "t1",
 		Name:        "企业展示",
@@ -32,12 +32,12 @@ var templates = []models.SiteTemplate{
 }
 
 // ListTemplates 获取模板列表
-func ListTemplates(category string) ([]models.SiteTemplate, error) {
+func ListTemplates(category string) ([]site.SiteTemplate, error) {
 	if category == "" {
 		return templates, nil
 	}
 
-	var result []models.SiteTemplate
+	var result []site.SiteTemplate
 	categoryLower := strings.ToLower(category)
 
 	for _, template := range templates {
@@ -52,12 +52,12 @@ func ListTemplates(category string) ([]models.SiteTemplate, error) {
 }
 
 // GetTemplate 获取模板详情
-func GetTemplate(templateID string) (models.SiteTemplate, error) {
+func GetTemplate(templateID string) (site.SiteTemplate, error) {
 	for _, template := range templates {
 		if template.ID == templateID {
 			return template, nil
 		}
 	}
 
-	return models.SiteTemplate{}, errors.New("模板不存在")
+	return site.SiteTemplate{}, errors.New("模板不存在")
 }

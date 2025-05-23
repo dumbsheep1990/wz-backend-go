@@ -2,15 +2,16 @@
 
 ## 文件新增及变动统计
 
-| 服务/目录                | 新增/变动文件数 | 新增/变动总行数 | 主要文件（示例）                                 |
-|------------------------|---------------|---------------|----------------------------------------------|
-| component-service/api/ | 1             | 67            | component.proto (新增)                       |
-| component-service/     | 3+            | 500+          | main.go、handlers/、service/component_service.go（变动/新增） |
-| page-service/api/      | 1             | 70            | page.proto (新增)                            |
-| page-service/          | 4+            | 700+          | main.go、handlers/、service/page_service.go、service/section_service.go（变动/新增） |
-| admin-service/         | 3+            | 600+          | main.go、internal/service/servicecontext.go、internal/model/models.go（变动/新增） |
+| 服务/目录                  | 新增/变动文件数 | 新增/变动总行数 | 主要文件（示例）                                                                    |
+| ---------------------- | -------- | -------- | --------------------------------------------------------------------------- |
+| component-service/api/ | 1        | 67       | component.proto (新增)                                                        |
+| component-service/     | 3+       | 500+     | main.go、handlers/、service/component_service.go（变动/新增）                       |
+| page-service/api/      | 1        | 70       | page.proto (新增)                                                             |
+| page-service/          | 4+       | 700+     | main.go、handlers/、service/page_service.go、service/section_service.go（变动/新增） |
+| admin-service/         | 3+       | 600+     | main.go、internal/service/servicecontext.go、internal/model/models.go（变动/新增）  |
 
 > 详细：
+> 
 > - 本次后端共计**新增/变动文件约12个**，涉及**约2000+行代码**。
 > - 主要包括 proto 定义、gRPC service 实现、数据库模型、服务启动与聚合、handler 层等。
 
@@ -22,11 +23,11 @@
 
 ## 1. 微服务与接口设计
 
-| 服务名称         | 主要功能描述                           |
-| -------------- | ---------------------------------- |
+| 服务名称              | 主要功能描述                   |
+| ----------------- | ------------------------ |
 | component-service | 组件的增删改查、分类、gRPC接口、数据库持久化 |
-| page-service      | 页面结构与内容管理、gRPC接口、数据库持久化   |
-| admin-service     | 后台统一管理入口，聚合调用各微服务gRPC接口    |
+| page-service      | 页面结构与内容管理、gRPC接口、数据库持久化  |
+| admin-service     | 后台统一管理入口，聚合调用各微服务gRPC接口  |
 
 ### 1.1 gRPC接口与proto定义
 
@@ -84,9 +85,3 @@ services/
 - DeletePage
 - GetPage
 - ListPages
-
-## 5. 后续建议
-
-- 持续完善各服务的单元测试与接口文档
-- 支持更多业务场景的gRPC接口扩展
-- 加强服务注册与健康检查 
