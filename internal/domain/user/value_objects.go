@@ -1,0 +1,194 @@
+package user
+
+import (
+	"errors"
+	"regexp"
+	"strings"
+)
+
+// Email 电子邮件值对象
+type Email struct {
+	value string
+}
+
+// NewEmail 创建邮箱值对象，并校验格式
+func NewEmail(email string) (Email, error) {
+	if email == "" {
+		return Email{}, nil
+	}
+	
+	email = strings.TrimSpace(email)
+	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+	if !emailRegex.MatchString(email) {
+		return Email{}, errors.New("邮箱格式不正确")
+	}
+	
+	return Email{value: email}, nil
+}
+
+// Value 获取邮箱值
+func (e Email) Value() string {
+	return e.value
+}
+
+// IsEmpty 判断邮箱是否为空
+func (e Email) IsEmpty() bool {
+	return e.value == ""
+}
+
+// Equals 比较两个邮箱值对象是否相等
+func (e Email) Equals(other Email) bool {
+	return strings.ToLower(e.value) == strings.ToLower(other.value)
+}
+
+// Phone 手机号值对象
+type Phone struct {
+	value string
+}
+
+// NewPhone 创建手机号值对象，并校验格式
+func NewPhone(phone string) (Phone, error) {
+	if phone == "" {
+		return Phone{}, nil
+	}
+	
+	phone = strings.TrimSpace(phone)
+	// 简单的中国手机号验证规则
+	phoneRegex := regexp.MustCompile(`^1[3-9]\d{9}$`)
+	if !phoneRegex.MatchString(phone) {
+		return Phone{}, errors.New("手机号格式不正确")
+	}
+	
+	return Phone{value: phone}, nil
+}
+
+// Value 获取手机号值
+func (p Phone) Value() string {
+	return p.value
+}
+
+// IsEmpty 判断手机号是否为空
+func (p Phone) IsEmpty() bool {
+	return p.value == ""
+}
+
+// Equals 比较两个手机号值对象是否相等
+func (p Phone) Equals(other Phone) bool {
+	return p.value == other.value
+}
+
+// Username 用户名值对象
+type Username struct {
+	value string
+}
+
+// NewUsername 创建用户名值对象，并校验格式
+func NewUsername(username string) (Username, error) {
+	if username == "" {
+		return Username{}, errors.New("用户名不能为空")
+	}
+	
+	username = strings.TrimSpace(username)
+	if len(username) < 3 || len(username) > 20 {
+		return Username{}, errors.New("用户名长度必须在3-20个字符之间")
+	}
+	
+	// 用户名只能包含字母、数字、下划线和中文
+	usernameRegex := regexp.MustCompile(`^[a-zA-Z0-9_\p{Han}]+$`)
+	if !usernameRegex.MatchString(username) {
+		return Username{}, errors.New("用户名只能包含字母、数字、下划线和中文")
+	}
+	
+	return Username{value: username}, nil
+}
+
+// Value 获取用户名值
+func (u Username) Value() string {
+	return u.value
+}
+
+// Equals 比较两个用户名值对象是否相等
+func (u Username) Equals(other Username) bool {
+	return u.value == other.value
+}
+
+// UserID 用户ID值对象
+type UserID int64
+
+// NewUserID 创建用户ID值对象
+func NewUserID(id int64) UserID {
+	return UserID(id)
+}
+
+// Value 获取用户ID值
+func (id UserID) Value() int64 {
+	return int64(id)
+}
+
+// UserStatus 用户状态枚举
+type UserStatus int32
+
+const (
+	// UserStatusDisabled 禁用状态
+	UserStatusDisabled UserStatus = 0
+	// UserStatusActive 正常状态
+	UserStatusActive UserStatus = 1
+	// UserStatusUnverified 未验证状态
+	UserStatusUnverified UserStatus = 2
+)
+
+// IsValid 验证用户状态是否有效
+func (s UserStatus) IsValid() bool {
+	return s >= UserStatusDisabled && s <= UserStatusUnverified
+}
+
+// String 获取状态的字符串表示
+func (s UserStatus) String() string {
+	switch s {
+	case UserStatusDisabled:
+		return "禁用"
+	case UserStatusActive:
+		return "正常"
+	case UserStatusUnverified:
+		return "未验证"
+	default:
+		return "未知状态"
+	}
+}
+
+// Gender 性别枚举
+type Gender int32
+
+const (
+	// GenderUnknown 未知
+	GenderUnknown Gender = 0
+	// GenderMale 男
+	GenderMale Gender = 1
+	// GenderFemale 女
+	GenderFemale Gender = 2
+)
+
+// String 获取性别的字符串表示
+func (g Gender) String() string {
+	switch g {
+	case GenderMale:
+		return "男"
+	case GenderFemale:
+		return "女"
+	default:
+		return "未知"
+	}
+}
+
+// TenantID 租户ID值对象
+type TenantID int64
+
+// NewTenantID 创建租户ID值对象
+func NewTenantID(id int64) TenantID {
+	return TenantID(id)
+}
+
+// Value 获取租户ID值
+func (id TenantID) Value() int64 {
+	return int64(id)
+}
