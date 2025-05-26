@@ -4,18 +4,18 @@
 
 | 服务/目录                | 新增/变动文件数 | 新增/变动总行数 | 主要文件（示例）                                 |
 |------------------------|---------------|---------------|----------------------------------------------|
-| community-service/models/ | 2             | 150+          | similar_application.go、similar_circle.go（新增） |
-| community-service/service/ | 2            | 300+          | similar_application_service.go、similar_service.go（新增） |
-| community-service/handlers/ | 2            | 300+          | similar_application_handler.go、routes.go（变动） |
-| wz-backend-web/server/service/ | 1         | 300+          | community/similar.go（新增）                    |
-| wz-backend-web/server/api/ | 1             | 400+          | v1/community/similar.go（新增/变动）             |
-| wz-backend-web/server/model/ | 2           | 100+          | community/similar.go、community/request/similar.go（新增） |
-| wz-backend-web/server/router/ | 1          | 50+           | community/similar.go（新增）                    |
-| wz-backend-web/web/src/api/ | 1            | 100+          | community/similar.js（新增）                    |
-| wz-backend-web/web/src/view/ | 3            | 900+          | community/similar/*.vue（新增）                |
+| community-service/models/ | 4           | 150+          | similar_application.go、similar_circle.go（新增） |
+| community-service/service/ | 4           | 300+          | similar_application_service.go、similar_service.go（新增） |
+| community-service/handlers/ | 5           | 300+          | similar_application_handler.go、routes.go（变动） |
+|                             |                 |                 |                                                            |
+|                             |                 |                 |                                                            |
+|                             |                 |                 |                                                            |
+|                             |                 |                 |                                                            |
+|                             |                 |                 |                                                            |
+|                             |                 |                 |                                                            |
 
 > 详细：
-> - 本次后端共计**新增/变动文件约15个**，涉及**约2600+行代码**。
+> - 本次后端共计**新增/变动文件约14个**，涉及**约750行代码**。
 > - 主要包括相同圈子申请管理、圈子管理、成员管理等功能实现，以及对应的前端管理界面开发。
 
 ---
@@ -199,5 +199,4 @@ Authorization: Bearer {token}
 - [ ] 提供相同圈子的数据统计和分析功能
 - [ ] 优化申请审批流程，增加自动审批规则
 - [ ] 开发移动端相同圈子功能
-
 

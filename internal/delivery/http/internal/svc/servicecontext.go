@@ -2,6 +2,7 @@ package svc
 
 import (
 	"wz-backend-go/internal/delivery/http/internal/config"
+	"wz-backend-go/internal/domain"
 	"wz-backend-go/internal/registry"
 	"wz-backend-go/internal/repository"
 	"wz-backend-go/internal/repository/mysql"
@@ -14,6 +15,7 @@ type ServiceContext struct {
 	Config config.Config
 	// 服务
 	TenantService service.TenantService
+	EnterpriseRegistrationService domain.EnterpriseRegistrationService
 	// 服务注册与发现
 	Registry         registry.ServiceRegistry
 	InstanceManager  registry.InstanceManager
@@ -55,11 +57,18 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	// 创建健康检查服务
 	healthChecker := registry.NewHealthCheckServer(c.Registry.HealthCheckPort, c.Registry.CheckInterval)
 	
+	// 初始化企业入驻仓库
+	enterpriseRegRepo := repository.NewEnterpriseRegistrationRepository(conn.DB)
+	
+	// 初始化企业入驻服务
+	enterpriseRegService := service.NewEnterpriseRegistrationService(enterpriseRegRepo)
+
 	return &ServiceContext{
-		Config:           c,
-		TenantService:    tenantService,
-		Registry:         nacosRegistry,
-		InstanceManager:  instanceManager,
-		HealthChecker:    healthChecker,
+		Config:                       c,
+		TenantService:                tenantService,
+		EnterpriseRegistrationService: enterpriseRegService,
+		Registry:                     nacosRegistry,
+		InstanceManager:              instanceManager,
+		HealthChecker:                healthChecker,
 	}
 }
