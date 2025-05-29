@@ -8,12 +8,26 @@ import (
 
 // DomainEvent 是所有领域事件的接口
 type DomainEvent interface {
+	// EventID 获取事件ID
 	EventID() string
-	EventType() string
+
+	// AggregateID 获取聚合根ID
 	AggregateID() string
-	AggregateType() string
-	OccurredAt() time.Time
-	Payload() interface{}
+
+	// EventType 获取事件类型
+	EventType() string
+
+	// OccurredTime 获取事件发生时间
+	OccurredTime() time.Time
+}
+
+// EventBus 事件总线接口
+type EventBus interface {
+	// Publish 发布事件
+	Publish(ctx interface{}, event DomainEvent) error
+
+	// Subscribe 订阅事件
+	Subscribe(eventType string, handler func(event DomainEvent) error)
 }
 
 // BaseDomainEvent 是领域事件的基础实现

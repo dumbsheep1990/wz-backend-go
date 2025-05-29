@@ -7,10 +7,19 @@ import (
 // UnitOfWorkFunc represents a function to be executed within a unit of work
 type UnitOfWorkFunc func(ctx context.Context) error
 
-// UnitOfWork defines the interface for transaction management
+// UnitOfWork 工作单元接口，用于事务管理
 type UnitOfWork interface {
-	// Execute runs the given function within a transaction
-	Execute(ctx context.Context, fn UnitOfWorkFunc) error
+	// Execute 在事务中执行操作
+	Execute(ctx context.Context, fn func(ctx context.Context) error) error
+}
+
+// Transaction 事务接口
+type Transaction interface {
+	// Commit 提交事务
+	Commit() error
+
+	// Rollback 回滚事务
+	Rollback() error
 }
 
 // UnitOfWorkImpl is a basic implementation of the UnitOfWork interface
@@ -22,10 +31,10 @@ type UnitOfWorkImpl struct {
 type TransactionManager interface {
 	// BeginTx starts a new transaction
 	BeginTx(ctx context.Context) (context.Context, error)
-	
+
 	// CommitTx commits a transaction
 	CommitTx(ctx context.Context) error
-	
+
 	// RollbackTx rolls back a transaction
 	RollbackTx(ctx context.Context) error
 }
@@ -44,10 +53,10 @@ func (u *UnitOfWorkImpl) Execute(ctx context.Context, fn UnitOfWorkFunc) error {
 	if err != nil {
 		return err
 	}
-	
+
 	// Execute the function
 	err = fn(txCtx)
-	
+
 	// Handle the transaction based on the result
 	if err != nil {
 		// Rollback on error
@@ -57,11 +66,11 @@ func (u *UnitOfWorkImpl) Execute(ctx context.Context, fn UnitOfWorkFunc) error {
 		}
 		return err
 	}
-	
+
 	// Commit the transaction
 	if err := u.db.CommitTx(txCtx); err != nil {
 		return err
 	}
-	
+
 	return nil
 }
