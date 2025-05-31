@@ -15,13 +15,15 @@ const (
 	ShippingMethodNextDay  ShippingMethod = 3 // 次日达
 	ShippingMethodPickup   ShippingMethod = 4 // 自提
 	ShippingMethodStandard ShippingMethod = 5 // 标准配送
+	ShippingMethodEconomy  ShippingMethod = 6 // 经济配送
 )
 
 // NewShippingMethod 创建配送方式值对象
 func NewShippingMethod(method int32) (ShippingMethod, error) {
 	switch method {
 	case int32(ShippingMethodUnknown), int32(ShippingMethodExpress), int32(ShippingMethodSameDay),
-		int32(ShippingMethodNextDay), int32(ShippingMethodPickup), int32(ShippingMethodStandard):
+		int32(ShippingMethodNextDay), int32(ShippingMethodPickup), int32(ShippingMethodStandard),
+		int32(ShippingMethodEconomy):
 		return ShippingMethod(method), nil
 	default:
 		return 0, errors.New("无效的配送方式")
@@ -46,6 +48,8 @@ func (s ShippingMethod) String() string {
 		return "自提"
 	case ShippingMethodStandard:
 		return "标准配送"
+	case ShippingMethodEconomy:
+		return "经济配送"
 	default:
 		return "未知配送方式"
 	}
@@ -77,6 +81,8 @@ func (s ShippingMethod) EstimatedDeliveryDays() int {
 		return 1
 	case ShippingMethodStandard:
 		return 3
+	case ShippingMethodEconomy:
+		return 7
 	case ShippingMethodPickup:
 		return 0
 	default:

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"wz-backend-go/internal/domain/order/entity"
+	ordervo "wz-backend-go/internal/domain/order/valueobject"
 	"wz-backend-go/internal/domain/shared/event"
 	uservo "wz-backend-go/internal/domain/user/valueobject"
 )

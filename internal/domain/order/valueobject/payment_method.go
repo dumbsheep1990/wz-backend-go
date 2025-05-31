@@ -70,3 +70,8 @@ func (p PaymentMethod) RequiresExternalProcessor() bool {
 func (p PaymentMethod) SupportRefund() bool {
 	return p != PaymentMethodCashOnDelivery && p != PaymentMethodUnknown
 }
+
+// IsValid 判断支付方式是否有效
+func (p PaymentMethod) IsValid() bool {
+	return p != PaymentMethodUnknown
+}

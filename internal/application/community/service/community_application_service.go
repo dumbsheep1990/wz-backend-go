@@ -3,12 +3,14 @@ package service
 import (
 	"context"
 	"errors"
+	"log"
 
 	"github.com/go-playground/validator/v10"
 
 	"github.com/yourusername/wz-backend-go/internal/application/community/dto"
 	"github.com/yourusername/wz-backend-go/internal/domain/community/entity"
 	"github.com/yourusername/wz-backend-go/internal/domain/community/repository"
+	"github.com/yourusername/wz-backend-go/internal/domain/community/service"
 	"github.com/yourusername/wz-backend-go/internal/domain/community/valueobject"
 	"github.com/yourusername/wz-backend-go/internal/domain/shared/event"
 	"github.com/yourusername/wz-backend-go/internal/infrastructure/persistence/database"
@@ -16,11 +18,12 @@ import (
 
 // CommunityApplicationService 处理社区相关的应用层逻辑
 type CommunityApplicationService struct {
-	communityRepo repository.CommunityRepository
-	userRepo      UserRepository // Interface to interact with users
-	eventBus      event.EventBus
-	validator     *validator.Validate
-	unitOfWork    database.UnitOfWork
+	communityRepo      repository.CommunityRepository
+	userRepo           UserRepository // Interface to interact with users
+	eventDispatcher    event.EventDispatcher
+	validator          *validator.Validate
+	unitOfWork         database.UnitOfWork
+	domainService      *service.CommunityDomainService
 }
 
 // UserRepository 定义与用户交互的接口
@@ -32,48 +35,46 @@ type UserRepository interface {
 func NewCommunityApplicationService(
 	communityRepo repository.CommunityRepository,
 	userRepo UserRepository,
-	eventBus event.EventBus,
+	eventDispatcher event.EventDispatcher,
 	unitOfWork database.UnitOfWork,
+	domainService *service.CommunityDomainService,
 ) *CommunityApplicationService {
 	return &CommunityApplicationService{
-		communityRepo: communityRepo,
-		userRepo:      userRepo,
-		eventBus:      eventBus,
-		validator:     validator.New(),
-		unitOfWork:    unitOfWork,
+		communityRepo:   communityRepo,
+		userRepo:        userRepo,
+		eventDispatcher: eventDispatcher,
+		validator:       validator.New(),
+		unitOfWork:      unitOfWork,
+		domainService:   domainService,
 	}
 }
 
 // CreateCommunity 创建一个新社区
-func (s *CommunityApplicationService) CreateCommunity(ctx context.Context, req dto.CreateCommunityRequest) (*dto.CommunityDTO, error) {
-	if err := s.validator.Struct(req); err != nil {
+func (s *CommunityApplicationService) CreateCommunity(ctx context.Context, cmd *dto.CreateCommunityCommand) (*dto.CommunityResponse, error) {
+	if err := s.validator.Struct(cmd); err != nil {
 		return nil, err
 	}
 
-	// 将请求值转换为领域值对象
-	name, err := valueobject.NewCommunityName(req.Name)
+	// 使用领域服务创建社区
+	community, err := s.domainService.CreateCommunity(
+		cmd.Name,
+		cmd.Description,
+		cmd.OwnerID,
+		cmd.OwnerName,
+		cmd.Tags,
+		cmd.Location,
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	description := valueobject.NewDescription(req.Description)
-	ownerID := valueobject.NewUserID(req.OwnerID)
-	location := valueobject.NewLocation(req.Location)
-
-	// 转换标签
-	tags := make([]valueobject.Tag, 0, len(req.Tags))
-	for _, tag := range req.Tags {
-		tagVO, err := valueobject.NewTag(tag)
-		if err != nil {
-			continue // Skip invalid tags
-		}
-		tags = append(tags, tagVO)
-	}
-
-	// 创建领域实体
-	community, err := entity.NewCommunity(name, description, ownerID, tags, location)
+	// 检查名称唯一性
+	exists, err := s.communityRepo.ExistsByName(ctx, community.Name())
 	if err != nil {
 		return nil, err
+	}
+	if exists {
+		return nil, errors.New("社区名称已存在")
 	}
 
 	// Use unit of work to ensure atomicity
@@ -84,11 +85,7 @@ func (s *CommunityApplicationService) CreateCommunity(ctx context.Context, req d
 		}
 
 		// Publish domain events
-		events := community.GetDomainEvents()
-		for _, event := range events {
-			s.eventBus.Publish(ctx, event)
-		}
-		community.ClearDomainEvents()
+		s.publishDomainEvents(ctx, community)
 
 		return nil
 	})
@@ -98,20 +95,24 @@ func (s *CommunityApplicationService) CreateCommunity(ctx context.Context, req d
 	}
 
 	// Get owner name for the response DTO
-	ownerName, _ := s.userRepo.FindUserNameByID(ctx, req.OwnerID)
+	ownerName, _ := s.userRepo.FindUserNameByID(ctx, cmd.OwnerID)
 
 	// 返回DTO
-	return dto.NewCommunityDTOFromEntity(community, ownerName, 0, 1, 0), nil
+	return s.toDTO(community, ownerName), nil
 }
 
 // GetCommunity 通过ID获取社区
-func (s *CommunityApplicationService) GetCommunity(ctx context.Context, req dto.GetCommunityRequest) (*dto.CommunityDTO, error) {
-	if err := s.validator.Struct(req); err != nil {
+func (s *CommunityApplicationService) GetCommunity(ctx context.Context, query *dto.GetCommunityQuery) (*dto.CommunityResponse, error) {
+	if err := s.validator.Struct(query); err != nil {
 		return nil, err
 	}
 
-	id := valueobject.NewID(req.ID)
-	community, err := s.communityRepo.FindByID(ctx, id)
+	communityID, err := valueobject.NewCommunityID(query.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	community, err := s.communityRepo.FindByID(ctx, communityID)
 	if err != nil {
 		return nil, err
 	}
@@ -129,17 +130,22 @@ func (s *CommunityApplicationService) GetCommunity(ctx context.Context, req dto.
 	memberCount := 1
 	postCount := 0
 
-	return dto.NewCommunityDTOFromEntity(community, ownerName, groupCount, memberCount, postCount), nil
+	return s.toDTO(community, ownerName), nil
 }
 
 // UpdateCommunity 更新现有社区
-func (s *CommunityApplicationService) UpdateCommunity(ctx context.Context, req dto.UpdateCommunityRequest) (*dto.CommunityDTO, error) {
-	if err := s.validator.Struct(req); err != nil {
+func (s *CommunityApplicationService) UpdateCommunity(ctx context.Context, cmd *dto.UpdateCommunityCommand) (*dto.CommunityResponse, error) {
+	if err := s.validator.Struct(cmd); err != nil {
 		return nil, err
 	}
 
-	id := valueobject.NewID(req.ID)
-	community, err := s.communityRepo.FindByID(ctx, id)
+	// 获取社区
+	communityID, err := valueobject.NewCommunityID(cmd.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	community, err := s.communityRepo.FindByID(ctx, communityID)
 	if err != nil {
 		return nil, err
 	}
@@ -148,79 +154,65 @@ func (s *CommunityApplicationService) UpdateCommunity(ctx context.Context, req d
 		return nil, errors.New("community not found")
 	}
 
-	// 根据请求应用更新
-	if req.Name != "" {
-		name, err := valueobject.NewCommunityName(req.Name)
-		if err != nil {
-			return nil, err
-		}
-		if err := community.UpdateName(name); err != nil {
-			return nil, err
-		}
+	// 构建更新映射
+	updates := make(map[string]interface{})
+	if cmd.Name != "" {
+		updates["name"] = cmd.Name
+	}
+	if cmd.Description != "" {
+		updates["description"] = cmd.Description
+	}
+	if len(cmd.Tags) > 0 {
+		updates["tags"] = cmd.Tags
+	}
+	if cmd.Location != "" {
+		updates["location"] = cmd.Location
 	}
 
-	if req.Description != "" {
-		description := valueobject.NewDescription(req.Description)
-		if err := community.UpdateDescription(description); err != nil {
-			return nil, err
-		}
-	}
-
-	if len(req.Tags) > 0 {
-		tags := make([]valueobject.Tag, 0, len(req.Tags))
-		for _, tag := range req.Tags {
-			tagVO, err := valueobject.NewTag(tag)
-			if err != nil {
-				continue // Skip invalid tags
-			}
-			tags = append(tags, tagVO)
-		}
-		if err := community.UpdateTags(tags); err != nil {
-			return nil, err
-		}
-	}
-
-	if req.Location != "" {
-		location := valueobject.NewLocation(req.Location)
-		if err := community.UpdateLocation(location); err != nil {
-			return nil, err
-		}
-	}
-
-	// 如果指定了状态，处理状态变更
-	if req.Status != "" {
-		switch valueobject.CommunityStatus(req.Status) {
-		case valueobject.StatusActive:
-			if err := community.Activate(); err != nil && err.Error() != "社区已经是活跃状态" {
-				return nil, err
-			}
-		case valueobject.StatusDeleted:
-			if err := community.Delete(); err != nil && err.Error() != "社区已经被删除" {
-				return nil, err
-			}
-		}
-	}
-
-	// Use unit of work to ensure atomicity
-	err = s.unitOfWork.Execute(ctx, func(ctx context.Context) error {
-		// 持久化保存更新后的社区
-		if err := s.communityRepo.Save(ctx, community); err != nil {
-			return err
-		}
-
-		// Publish domain events
-		events := community.GetDomainEvents()
-		for _, event := range events {
-			s.eventBus.Publish(ctx, event)
-		}
-		community.ClearDomainEvents()
-
-		return nil
-	})
-
-	if err != nil {
+	// 验证更新操作
+	if err := s.domainService.ValidateCommunityUpdate(community, cmd.OperatorID, updates); err != nil {
 		return nil, err
 	}
+
+	// 执行更新
+	for field, value := range updates {
+		switch field {
+		case "name":
+			if name, ok := value.(string); ok {
+				communityName, err := valueobject.NewCommunityName(name)
+				if err != nil {
+					return nil, err
+				}
+				if err := community.UpdateName(communityName); err != nil {
+					return nil, err
+				}
+			}
+		case "description":
+			if desc, ok := value.(string); ok {
+				community.UpdateDescription(desc)
+			}
+		case "tags":
+			if tags, ok := value.([]string); ok {
+				communityTags, err := valueobject.NewTags(tags)
+				if err != nil {
+					return nil, err
+				}
+				community.UpdateTags(communityTags)
+			}
+		case "location":
+			if loc, ok := value.(string); ok {
+				community.UpdateLocation(loc)
+			}
+		}
+	}
+
+	// 保存更新
+	if err := s.communityRepo.Save(ctx, community); err != nil {
+		return nil, err
+	}
+
+	// 发布领域事件
+	s.publishDomainEvents(ctx, community)
 
 	// Get owner name for the response DTO
 	ownerName, _ := s.userRepo.FindUserNameByID(ctx, community.OwnerID().String())
@@ -230,17 +222,22 @@ func (s *CommunityApplicationService) UpdateCommunity(ctx context.Context, req d
 	memberCount := 1
 	postCount := 0
 
-	return dto.NewCommunityDTOFromEntity(community, ownerName, groupCount, memberCount, postCount), nil
+	return s.toDTO(community, ownerName), nil
 }
 
 // DeleteCommunity 删除社区
-func (s *CommunityApplicationService) DeleteCommunity(ctx context.Context, req dto.DeleteCommunityRequest) error {
-	if err := s.validator.Struct(req); err != nil {
+func (s *CommunityApplicationService) DeleteCommunity(ctx context.Context, cmd *dto.DeleteCommunityCommand) error {
+	if err := s.validator.Struct(cmd); err != nil {
 		return err
 	}
 
-	id := valueobject.NewID(req.ID)
-	community, err := s.communityRepo.FindByID(ctx, id)
+	// 获取社区
+	communityID, err := valueobject.NewCommunityID(cmd.ID)
+	if err != nil {
+		return err
+	}
+
+	community, err := s.communityRepo.FindByID(ctx, communityID)
 	if err != nil {
 		return err
 	}
@@ -249,8 +246,13 @@ func (s *CommunityApplicationService) DeleteCommunity(ctx context.Context, req d
 		return errors.New("未找到社区")
 	}
 
-	// 在领域模型中将社区标记为已删除
-	if err := community.Delete(); err != nil {
+	// 检查权限
+	if !community.IsOwnedBy(cmd.OperatorID) {
+		return errors.New("只有社区创建者可以删除社区")
+	}
+
+	// 删除社区
+	if err := community.Delete(cmd.Reason); err != nil {
 		return err
 	}
 
@@ -263,100 +265,35 @@ func (s *CommunityApplicationService) DeleteCommunity(ctx context.Context, req d
 		}
 
 		// Publish domain events
-		events := community.GetDomainEvents()
-		for _, event := range events {
-			s.eventBus.Publish(ctx, event)
-		}
-		community.ClearDomainEvents()
+		s.publishDomainEvents(ctx, community)
 
 		return nil
 	})
 }
 
 // ListCommunities 使用过滤和分页列出社区
-func (s *CommunityApplicationService) ListCommunities(ctx context.Context, req dto.ListCommunitiesRequest) (*dto.CommunitiesResponse, error) {
-	// 默认分页值
-	offset := req.Offset
-	if offset < 0 {
-		offset = 0
+func (s *CommunityApplicationService) ListCommunities(ctx context.Context, query *dto.ListCommunitiesQuery) (*dto.CommunitiesResponse, error) {
+	// 构建过滤条件
+	filter := &repository.CommunityFilter{
+		Status:   query.Status,
+		Tags:     query.Tags,
+		Location: query.Location,
+		Search:   query.Search,
 	}
 
-	limit := req.Limit
-	if limit <= 0 {
-		limit = 10 // 默认限制
-	} else if limit > 100 {
-		limit = 100 // 最大限制
+	// 构建分页参数
+	pagination := &repository.Pagination{
+		Page:  query.Page,
+		Limit: query.Limit,
 	}
 
-	var communities []*entity.Community
-	var total int
-	var err error
-
-	// 根据请求应用过滤器
-	if req.OwnerID != "" {
-		ownerID := valueobject.NewUserID(req.OwnerID)
-		communities, err = s.communityRepo.FindByOwnerID(ctx, ownerID)
-		if err != nil {
-			return nil, err
-		}
-		total = len(communities)
-		// Simple pagination in memory for this example
-		if offset < total {
-			end := offset + limit
-			if end > total {
-				end = total
-			}
-			communities = communities[offset:end]
-		} else {
-			communities = []*entity.Community{}
-		}
-	} else if req.Tag != "" {
-		tag, err := valueobject.NewTag(req.Tag)
-		if err != nil {
-			return nil, err
-		}
-		communities, err = s.communityRepo.FindByTags(ctx, []valueobject.Tag{tag})
-		if err != nil {
-			return nil, err
-		}
-		total = len(communities)
-		// Simple pagination in memory for this example
-		if offset < total {
-			end := offset + limit
-			if end > total {
-				end = total
-			}
-			communities = communities[offset:end]
-		} else {
-			communities = []*entity.Community{}
-		}
-	} else if req.Location != "" {
-		location := valueobject.NewLocation(req.Location)
-		communities, err = s.communityRepo.FindByLocation(ctx, location)
-		if err != nil {
-			return nil, err
-		}
-		total = len(communities)
-		// Simple pagination in memory for this example
-		if offset < total {
-			end := offset + limit
-			if end > total {
-				end = total
-			}
-			communities = communities[offset:end]
-		} else {
-			communities = []*entity.Community{}
-		}
-	} else {
-		// 获取所有社区并进行分页
-		communities, total, err = s.communityRepo.FindAll(ctx, offset, limit)
-		if err != nil {
-			return nil, err
-		}
+	communities, total, err := s.communityRepo.FindWithFilter(ctx, filter, pagination)
+	if err != nil {
+		return nil, err
 	}
 
 	// 将实体转换为DTO对象
-	dtos := make([]*dto.CommunityDTO, 0, len(communities))
+	communityDTOs := make([]*dto.CommunityResponse, 0, len(communities))
 	for _, community := range communities {
 		ownerName, _ := s.userRepo.FindUserNameByID(ctx, community.OwnerID().String())
 		
@@ -365,11 +302,232 @@ func (s *CommunityApplicationService) ListCommunities(ctx context.Context, req d
 		memberCount := 1
 		postCount := 0
 		
-		dtos = append(dtos, dto.NewCommunityDTOFromEntity(community, ownerName, groupCount, memberCount, postCount))
+		communityDTOs = append(communityDTOs, s.toDTO(community, ownerName))
 	}
 
 	return &dto.CommunitiesResponse{
-		Communities: dtos,
+		Communities: communityDTOs,
 		Total:       total,
+		Page:        query.Page,
+		Limit:       query.Limit,
 	}, nil
+}
+
+// ChangeCommunityStatus 变更社区状态
+func (s *CommunityApplicationService) ChangeCommunityStatus(ctx context.Context, cmd *dto.ChangeCommunityStatusCommand) (*dto.CommunityResponse, error) {
+	// 获取社区
+	communityID, err := valueobject.NewCommunityID(cmd.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	community, err := s.communityRepo.FindByID(ctx, communityID)
+	if err != nil {
+		return nil, err
+	}
+	if community == nil {
+		return nil, errors.New("社区不存在")
+	}
+
+	// 解析目标状态
+	targetStatus, err := valueobject.NewCommunityStatus(cmd.Status)
+	if err != nil {
+		return nil, err
+	}
+
+	// 验证状态变更
+	if err := s.domainService.ValidateCommunityStatusChange(community, targetStatus, cmd.OperatorID, cmd.Reason); err != nil {
+		return nil, err
+	}
+
+	// 执行状态变更
+	switch targetStatus {
+	case valueobject.CommunityStatusActive:
+		if err := community.Activate(); err != nil {
+			return nil, err
+		}
+	case valueobject.CommunityStatusSuspended:
+		if err := community.Suspend(cmd.Reason); err != nil {
+			return nil, err
+		}
+	case valueobject.CommunityStatusArchived:
+		if err := community.Archive(cmd.Reason); err != nil {
+			return nil, err
+		}
+	case valueobject.CommunityStatusDeleted:
+		if err := community.Delete(cmd.Reason); err != nil {
+			return nil, err
+		}
+	case valueobject.CommunityStatusReviewing:
+		if err := community.SubmitForReview(); err != nil {
+			return nil, err
+		}
+	}
+
+	// 保存状态变更
+	if err := s.communityRepo.Save(ctx, community); err != nil {
+		return nil, err
+	}
+
+	// 发布领域事件
+	s.publishDomainEvents(ctx, community)
+
+	// Get owner name for the response DTO
+	ownerName, _ := s.userRepo.FindUserNameByID(ctx, community.OwnerID().String())
+
+	// TODO: Add logic to get group count, member count, and post count
+	groupCount := 0
+	memberCount := 1
+	postCount := 0
+
+	return s.toDTO(community, ownerName), nil
+}
+
+// JoinCommunity 加入社区
+func (s *CommunityApplicationService) JoinCommunity(ctx context.Context, cmd *dto.JoinCommunityCommand) error {
+	// 获取社区
+	communityID, err := valueobject.NewCommunityID(cmd.CommunityID)
+	if err != nil {
+		return err
+	}
+
+	community, err := s.communityRepo.FindByID(ctx, communityID)
+	if err != nil {
+		return err
+	}
+	if community == nil {
+		return errors.New("社区不存在")
+	}
+
+	// 验证加入操作
+	if err := s.domainService.ValidateMemberJoin(community, cmd.MemberID, cmd.JoinMethod); err != nil {
+		return err
+	}
+
+	// 增加成员计数
+	community.IncrementMemberCount()
+
+	// 保存变更
+	if err := s.communityRepo.Save(ctx, community); err != nil {
+		return err
+	}
+
+	// 发布成员加入事件
+	joinEvent := entity.NewCommunityMemberJoinedEvent(community, cmd.MemberID, cmd.MemberName, cmd.JoinMethod)
+	if err := s.eventDispatcher.Dispatch(ctx, joinEvent); err != nil {
+		log.Printf("Failed to dispatch member joined event: %v", err)
+	}
+
+	// 发布领域事件
+	s.publishDomainEvents(ctx, community)
+
+	return nil
+}
+
+// LeaveCommunity 离开社区
+func (s *CommunityApplicationService) LeaveCommunity(ctx context.Context, cmd *dto.LeaveCommunityCommand) error {
+	// 获取社区
+	communityID, err := valueobject.NewCommunityID(cmd.CommunityID)
+	if err != nil {
+		return err
+	}
+
+	community, err := s.communityRepo.FindByID(ctx, communityID)
+	if err != nil {
+		return err
+	}
+	if community == nil {
+		return errors.New("社区不存在")
+	}
+
+	// 验证离开操作
+	if err := s.domainService.ValidateMemberLeave(community, cmd.MemberID, cmd.LeaveReason); err != nil {
+		return err
+	}
+
+	// 减少成员计数
+	community.DecrementMemberCount()
+
+	// 保存变更
+	if err := s.communityRepo.Save(ctx, community); err != nil {
+		return err
+	}
+
+	// 发布成员离开事件
+	leaveEvent := entity.NewCommunityMemberLeftEvent(community, cmd.MemberID, cmd.MemberName, cmd.LeaveReason)
+	if err := s.eventDispatcher.Dispatch(ctx, leaveEvent); err != nil {
+		log.Printf("Failed to dispatch member left event: %v", err)
+	}
+
+	// 发布领域事件
+	s.publishDomainEvents(ctx, community)
+
+	return nil
+}
+
+// GetCommunityHealth 获取社区健康度
+func (s *CommunityApplicationService) GetCommunityHealth(ctx context.Context, query *dto.GetCommunityHealthQuery) (*dto.CommunityHealthResponse, error) {
+	// 获取社区
+	communityID, err := valueobject.NewCommunityID(query.CommunityID)
+	if err != nil {
+		return nil, err
+	}
+
+	community, err := s.communityRepo.FindByID(ctx, communityID)
+	if err != nil {
+		return nil, err
+	}
+	if community == nil {
+		return nil, errors.New("社区不存在")
+	}
+
+	// 计算健康度
+	health := s.domainService.CheckCommunityHealth(community)
+
+	return &dto.CommunityHealthResponse{
+		CommunityID:   query.CommunityID,
+		OverallScore:  health["overall_score"].(int),
+		Indicators:    health["indicators"].(map[string]interface{}),
+		Suggestions:   health["suggestions"].([]string),
+	}, nil
+}
+
+// RecommendTags 推荐标签
+func (s *CommunityApplicationService) RecommendTags(ctx context.Context, query *dto.RecommendTagsQuery) (*dto.RecommendTagsResponse, error) {
+	tags := s.domainService.RecommendTags(query.Name, query.Description, query.Location)
+	
+	return &dto.RecommendTagsResponse{
+		RecommendedTags: tags,
+	}, nil
+}
+
+// publishDomainEvents 发布领域事件
+func (s *CommunityApplicationService) publishDomainEvents(ctx context.Context, community *entity.Community) {
+	events := community.GetDomainEvents()
+	for _, domainEvent := range events {
+		if err := s.eventDispatcher.Dispatch(ctx, domainEvent); err != nil {
+			log.Printf("Failed to dispatch domain event: %v", err)
+		}
+	}
+	community.ClearDomainEvents()
+}
+
+// toDTO 转换为DTO
+func (s *CommunityApplicationService) toDTO(community *entity.Community, ownerName string) *dto.CommunityResponse {
+	return &dto.CommunityResponse{
+		ID:          community.ID().Value(),
+		Name:        community.Name().Value(),
+		Description: community.Description(),
+		OwnerID:     community.OwnerID(),
+		OwnerName:   ownerName,
+		Status:      community.Status().String(),
+		StatusCode:  community.Status().Value(),
+		Tags:        community.Tags().Values(),
+		Location:    community.Location(),
+		GroupCount:  community.GroupCount(),
+		MemberCount: community.MemberCount(),
+		PostCount:   community.PostCount(),
+		CreatedAt:   community.CreatedAt(),
+		UpdatedAt:   community.UpdatedAt(),
+	}
 }

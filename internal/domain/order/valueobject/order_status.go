@@ -124,3 +124,53 @@ func (s OrderStatus) CanDeliver() bool {
 func (s OrderStatus) CanComplete() bool {
 	return s == OrderStatusDelivered
 }
+
+// IsCreated 判断是否为已创建状态
+func (s OrderStatus) IsCreated() bool {
+	return s == OrderStatusCreated
+}
+
+// IsPending 判断是否为待支付状态
+func (s OrderStatus) IsPending() bool {
+	return s == OrderStatusPending
+}
+
+// IsSubmitted 判断是否为已提交状态（待支付）
+func (s OrderStatus) IsSubmitted() bool {
+	return s == OrderStatusPending
+}
+
+// IsPaid 判断是否为已支付状态
+func (s OrderStatus) IsPaid() bool {
+	return s == OrderStatusPaid
+}
+
+// IsShipped 判断是否为已发货状态
+func (s OrderStatus) IsShipped() bool {
+	return s == OrderStatusShipped
+}
+
+// IsDelivered 判断是否为已送达状态
+func (s OrderStatus) IsDelivered() bool {
+	return s == OrderStatusDelivered
+}
+
+// IsCompleted 判断是否为已完成状态
+func (s OrderStatus) IsCompleted() bool {
+	return s == OrderStatusCompleted
+}
+
+// IsCancelled 判断是否为已取消状态
+func (s OrderStatus) IsCancelled() bool {
+	return s == OrderStatusCancelled
+}
+
+// IsRefunding 判断是否为退款中状态
+func (s OrderStatus) IsRefunding() bool {
+	return s == OrderStatusRefunding
+}
+
+// IsRefunded 判断是否为已退款状态
+func (s OrderStatus) IsRefunded() bool {
+	return s == OrderStatusRefunded
+}

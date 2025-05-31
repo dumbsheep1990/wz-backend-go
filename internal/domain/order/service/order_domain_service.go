@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -573,4 +574,306 @@ func (s *OrderDomainService) SearchOrders(keyword string, page, pageSize int) ([
 // DeleteOrder 删除订单
 func (s *OrderDomainService) DeleteOrder(orderID ordervo.OrderID) error {
 	return s.orderRepository.Delete(orderID)
+}
+
+// CanUserAccessOrder 验证用户是否可以访问订单
+func (s *OrderDomainService) CanUserAccessOrder(userID uservo.UserID, order *entity.Order) bool {
+	// 用户只能访问自己的订单
+	return order.CustomerID().Value() == userID.Value()
+}
+
+// CanModifyOrder 验证订单是否可以修改
+func (s *OrderDomainService) CanModifyOrder(order *entity.Order) bool {
+	// 只有创建状态的订单可以修改
+	return order.CanModify()
+}
+
+// CanCancelOrder 验证订单是否可以取消
+func (s *OrderDomainService) CanCancelOrder(userID uservo.UserID, order *entity.Order) bool {
+	// 验证用户权限
+	if !s.CanUserAccessOrder(userID, order) {
+		return false
+	}
+
+	// 已支付但未发货的订单可以取消
+	return order.IsPaid() && !order.IsShipped() && !order.IsCompleted() && !order.IsCancelled()
+}
+
+// CanRefundOrder 验证订单是否可以退款
+func (s *OrderDomainService) CanRefundOrder(userID uservo.UserID, order *entity.Order) bool {
+	// 验证用户权限
+	if !s.CanUserAccessOrder(userID, order) {
+		return false
+	}
+
+	// 已支付且未退款的订单可以申请退款
+	if !order.IsPaid() || order.IsRefunded() {
+		return false
+	}
+
+	// 已取消的订单不能退款
+	if order.IsCancelled() {
+		return false
+	}
+
+	// 检查退款时限（完成后30天内可以退款）
+	if order.IsCompleted() && order.CompletedAt() != nil {
+		refundDeadline := order.CompletedAt().Add(30 * 24 * time.Hour)
+		if time.Now().After(refundDeadline) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// ValidateOrderCreation 验证订单创建
+func (s *OrderDomainService) ValidateOrderCreation(ctx context.Context, order *entity.Order) error {
+	// 验证订单项不为空
+	if len(order.Items()) == 0 {
+		return ordervo.ErrOrderItemsEmpty
+	}
+
+	// 验证订单金额
+	if order.TotalAmount().Amount() <= 0 {
+		return ordervo.ErrInvalidOrderAmount
+	}
+
+	// 验证地址信息
+	if err := s.validateAddress(order.ShippingAddress()); err != nil {
+		return err
+	}
+
+	if err := s.validateAddress(order.BillingAddress()); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ValidateOrderPayment 验证订单支付
+func (s *OrderDomainService) ValidateOrderPayment(order *entity.Order, paymentMethod ordervo.PaymentMethod) error {
+	// 验证订单状态
+	if order.IsPaid() {
+		return ordervo.ErrOrderAlreadyPaid
+	}
+
+	if order.IsCancelled() {
+		return ordervo.ErrOrderCancelled
+	}
+
+	// 验证支付方式
+	if !paymentMethod.IsValid() {
+		return ordervo.ErrInvalidPaymentMethod
+	}
+
+	// 验证订单金额
+	if order.TotalAmount().Amount() <= 0 {
+		return ordervo.ErrInvalidOrderAmount
+	}
+
+	return nil
+}
+
+// ValidateOrderShipment 验证订单发货
+func (s *OrderDomainService) ValidateOrderShipment(order *entity.Order, trackingNumber string) error {
+	// 验证订单已支付
+	if !order.IsPaid() {
+		return ordervo.ErrOrderNotPaid
+	}
+
+	// 验证订单未取消
+	if order.IsCancelled() {
+		return ordervo.ErrOrderCancelled
+	}
+
+	// 验证订单未发货
+	if order.IsShipped() {
+		return ordervo.ErrOrderAlreadyShipped
+	}
+
+	// 验证物流单号
+	if trackingNumber == "" {
+		return ordervo.ErrInvalidTrackingNumber
+	}
+
+	return nil
+}
+
+// CalculateRefundAmount 计算退款金额
+func (s *OrderDomainService) CalculateRefundAmount(order *entity.Order) (ordervo.Money, error) {
+	// 如果订单未发货，全额退款
+	if !order.IsShipped() {
+		return order.TotalAmount(), nil
+	}
+
+	// 如果订单已发货但未完成，扣除配送费
+	if order.IsShipped() && !order.IsCompleted() {
+		refundAmount := order.TotalAmount().Amount() - order.ShippingFee().Amount()
+		return ordervo.NewMoney(refundAmount, order.TotalAmount().Currency())
+	}
+
+	// 如果订单已完成，根据完成时间计算退款比例
+	if order.IsCompleted() && order.CompletedAt() != nil {
+		daysSinceCompletion := int(time.Since(*order.CompletedAt()).Hours() / 24)
+		
+		var refundRatio float64
+		switch {
+		case daysSinceCompletion <= 7:
+			refundRatio = 1.0 // 7天内全额退款
+		case daysSinceCompletion <= 15:
+			refundRatio = 0.8 // 15天内80%退款
+		case daysSinceCompletion <= 30:
+			refundRatio = 0.5 // 30天内50%退款
+		default:
+			refundRatio = 0.0 // 超过30天不退款
+		}
+
+		refundAmount := int64(float64(order.TotalAmount().Amount()) * refundRatio)
+		return ordervo.NewMoney(refundAmount, order.TotalAmount().Currency())
+	}
+
+	return ordervo.NewMoney(0, order.TotalAmount().Currency())
+}
+
+// GetAvailableOrderActions 获取订单可用操作
+func (s *OrderDomainService) GetAvailableOrderActions(userID uservo.UserID, order *entity.Order) []string {
+	actions := make([]string, 0)
+
+	// 验证用户权限
+	if !s.CanUserAccessOrder(userID, order) {
+		return actions
+	}
+
+	// 根据订单状态判断可用操作
+	switch {
+	case order.Status().IsCreated():
+		actions = append(actions, "modify", "submit", "cancel")
+	case order.Status().IsSubmitted():
+		actions = append(actions, "pay", "cancel")
+	case order.Status().IsPaid():
+		if !order.IsShipped() {
+			actions = append(actions, "cancel")
+		}
+		actions = append(actions, "refund")
+	case order.Status().IsShipped():
+		actions = append(actions, "confirm_delivery", "refund")
+	case order.Status().IsDelivered():
+		actions = append(actions, "complete", "refund")
+	case order.Status().IsCompleted():
+		if s.CanRefundOrder(userID, order) {
+			actions = append(actions, "refund")
+		}
+	}
+
+	return actions
+}
+
+// EstimateDeliveryTime 估算配送时间
+func (s *OrderDomainService) EstimateDeliveryTime(order *entity.Order) time.Time {
+	baseTime := time.Now()
+	
+	// 根据配送方式估算时间
+	switch order.ShippingMethod().Value() {
+	case int32(ordervo.ShippingMethodExpress):
+		return baseTime.Add(1 * 24 * time.Hour) // 快递1天
+	case int32(ordervo.ShippingMethodStandard):
+		return baseTime.Add(3 * 24 * time.Hour) // 标准配送3天
+	case int32(ordervo.ShippingMethodEconomy):
+		return baseTime.Add(7 * 24 * time.Hour) // 经济配送7天
+	default:
+		return baseTime.Add(3 * 24 * time.Hour) // 默认3天
+	}
+}
+
+// CheckOrderTimeout 检查订单超时
+func (s *OrderDomainService) CheckOrderTimeout(ctx context.Context, order *entity.Order) error {
+	now := time.Now()
+
+	// 检查提交超时（创建后24小时未提交自动取消）
+	if order.Status().IsCreated() {
+		submitDeadline := order.CreatedAt().Add(24 * time.Hour)
+		if now.After(submitDeadline) {
+			return order.Cancel()
+		}
+	}
+
+	// 检查支付超时（提交后24小时未支付自动取消）
+	if order.Status().IsSubmitted() {
+		paymentDeadline := order.CreatedAt().Add(48 * time.Hour)
+		if now.After(paymentDeadline) {
+			return order.Cancel()
+		}
+	}
+
+	// 检查发货超时（支付后72小时未发货提醒）
+	if order.Status().IsPaid() && !order.IsShipped() {
+		shipmentDeadline := order.PaidAt().Add(72 * time.Hour)
+		if now.After(shipmentDeadline) {
+			// 这里可以发送提醒通知，但不自动取消订单
+			// 实际业务中可能需要人工处理
+		}
+	}
+
+	return nil
+}
+
+// GenerateOrderReport 生成订单报告
+func (s *OrderDomainService) GenerateOrderReport(ctx context.Context, orders []*entity.Order) *OrderReport {
+	report := &OrderReport{
+		TotalOrders:    len(orders),
+		TotalRevenue:   0,
+		StatusBreakdown: make(map[string]int),
+		PaymentBreakdown: make(map[string]int),
+	}
+
+	for _, order := range orders {
+		// 统计收入（只计算已支付订单）
+		if order.IsPaid() {
+			report.TotalRevenue += order.TotalAmount().Amount()
+		}
+
+		// 统计状态分布
+		statusName := order.Status().String()
+		report.StatusBreakdown[statusName]++
+
+		// 统计支付方式分布
+		if order.IsPaid() {
+			paymentName := order.PaymentMethod().String()
+			report.PaymentBreakdown[paymentName]++
+		}
+	}
+
+	return report
+}
+
+// validateAddress 验证地址信息
+func (s *OrderDomainService) validateAddress(address ordervo.Address) error {
+	if address.Country() == "" {
+		return ordervo.ErrInvalidAddress
+	}
+	if address.Province() == "" {
+		return ordervo.ErrInvalidAddress
+	}
+	if address.City() == "" {
+		return ordervo.ErrInvalidAddress
+	}
+	if address.DetailAddress() == "" {
+		return ordervo.ErrInvalidAddress
+	}
+	if address.ContactName() == "" {
+		return ordervo.ErrInvalidAddress
+	}
+	if address.ContactPhone() == "" {
+		return ordervo.ErrInvalidAddress
+	}
+	return nil
+}
+
+// OrderReport 订单报告
+type OrderReport struct {
+	TotalOrders      int            `json:"total_orders"`
+	TotalRevenue     int64          `json:"total_revenue"`
+	StatusBreakdown  map[string]int `json:"status_breakdown"`
+	PaymentBreakdown map[string]int `json:"payment_breakdown"`
 }
