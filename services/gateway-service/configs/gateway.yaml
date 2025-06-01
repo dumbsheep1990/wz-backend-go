@@ -1,0 +1,51 @@
+server:
+  port: 8080
+  environment: development
+  shutdownTimeout: 5s
+
+# Microservice destinations configuration
+services:
+  - name: user-service
+    url: http://localhost:8081
+    requireAuth: true
+  - name: content-service
+    url: http://localhost:8082
+    requireAuth: true
+  - name: file-service
+    url: http://localhost:8083
+    requireAuth: true
+  - name: interaction-service
+    url: http://localhost:8085
+    requireAuth: true
+  - name: community-service
+    url: http://localhost:8084
+    requireAuth: true
+  - name: admin-service
+    url: http://localhost:8086
+    requireAuth: true
+  - name: render-service
+    url: http://localhost:8087
+    requireAuth: false
+
+# Telemetry configuration
+telemetry:
+  collectorUrl: http://localhost:4317
+
+# Database configuration
+database:
+  host: localhost
+  port: 3306
+  user: wanzhiuser
+  password: wanzhipass
+  name: wanzhi_gateway
+  maxOpenConns: 50
+  maxIdleConns: 10
+  connMaxLifetime: 5m
+
+# Redis configuration
+redis:
+  host: localhost
+  port: 6379
+  password: ""
+  db: 0
+  poolSize: 100

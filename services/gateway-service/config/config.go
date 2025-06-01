@@ -12,6 +12,8 @@ type Config struct {
 	Server    ServerConfig    `yaml:"server"`
 	Services  []ServiceConfig `yaml:"services"`
 	Telemetry TelemetryConfig `yaml:"telemetry"`
+	Database  DatabaseConfig  `yaml:"database"`
+	Redis     RedisConfig     `yaml:"redis"`
 }
 
 // ServerConfig 服务器配置
@@ -31,6 +33,27 @@ type ServiceConfig struct {
 // TelemetryConfig 遥测配置
 type TelemetryConfig struct {
 	CollectorURL string `yaml:"collectorUrl"`
+}
+
+// DatabaseConfig 数据库配置
+type DatabaseConfig struct {
+	Host            string        `yaml:"host"`
+	Port            int           `yaml:"port"`
+	User            string        `yaml:"user"`
+	Password        string        `yaml:"password"`
+	Name            string        `yaml:"name"`
+	MaxOpenConns    int           `yaml:"maxOpenConns"`
+	MaxIdleConns    int           `yaml:"maxIdleConns"`
+	ConnMaxLifetime time.Duration `yaml:"connMaxLifetime"`
+}
+
+// RedisConfig Redis配置
+type RedisConfig struct {
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	Password string `yaml:"password"`
+	DB       int    `yaml:"db"`
+	PoolSize int    `yaml:"poolSize"`
 }
 
 // Load 从文件加载配置
@@ -90,6 +113,23 @@ func DefaultConfig() Config {
 		},
 		Telemetry: TelemetryConfig{
 			CollectorURL: "http://localhost:4317",
+		},
+		Database: DatabaseConfig{
+			Host:            "localhost",
+			Port:            3306,
+			User:            "wanzhiuser",
+			Password:        "wanzhipass",
+			Name:            "wanzhi_gateway",
+			MaxOpenConns:    50,
+			MaxIdleConns:    10,
+			ConnMaxLifetime: 5 * time.Minute,
+		},
+		Redis: RedisConfig{
+			Host:     "localhost",
+			Port:     6379,
+			Password: "",
+			DB:       0,
+			PoolSize: 100,
 		},
 	}
 } 
