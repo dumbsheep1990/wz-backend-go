@@ -10,31 +10,36 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
-type GetOrderLogic struct {
+type RefundOrderLogic struct {
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
 	logx.Logger
 }
 
-func NewGetOrderLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetOrderLogic {
-	return &GetOrderLogic{
+func NewRefundOrderLogic(ctx context.Context, svcCtx *svc.ServiceContext) *RefundOrderLogic {
+	return &RefundOrderLogic{
 		ctx:    ctx,
 		svcCtx: svcCtx,
 		Logger: logx.WithContext(ctx),
 	}
 }
 
-func (l *GetOrderLogic) GetOrder(in *trade.GetOrderRequest) (*trade.GetOrderResponse, error) {
-	// 构建查询DTO
-	query := dto.GetOrderQuery{
-		OrderID: in.OrderId,
+func (l *RefundOrderLogic) RefundOrder(in *trade.RefundOrderRequest) (*trade.RefundOrderResponse, error) {
+	// 构建退款处理命令
+	cmd := dto.RefundOrderCommand{
+		OrderID:       in.OrderId,
+		RefundAmount:  dto.Money{Amount: in.Amount.Amount, Currency: in.Amount.Currency},
+		AdminNote:     in.AdminNote,
+		RefundMethod:  in.RefundMethod,
+		TransactionID: in.TransactionId,
 	}
 
 	// 调用应用服务
-	orderDTO, err := l.svcCtx.OrderApplicationService.GetOrder(l.ctx, query)
+	orderDTO, err := l.svcCtx.OrderApplicationService.RefundOrder(l.ctx, cmd)
 	if err != nil {
-		l.Error("Failed to get order", logx.Field("error", err), logx.Field("orderId", in.OrderId))
-		return &trade.GetOrderResponse{
+		l.Error("Failed to process refund", logx.Field("error", err),
+			logx.Field("orderId", in.OrderId))
+		return &trade.RefundOrderResponse{
 			Success: false,
 			Error:   err.Error(),
 		}, nil
@@ -76,7 +81,7 @@ func (l *GetOrderLogic) GetOrder(in *trade.GetOrderRequest) (*trade.GetOrderResp
 	}
 
 	// 构建响应
-	return &trade.GetOrderResponse{
+	return &trade.RefundOrderResponse{
 		Success: true,
 		Order: &trade.Order{
 			Id:           orderDTO.ID,
@@ -102,12 +107,21 @@ func (l *GetOrderLogic) GetOrder(in *trade.GetOrderRequest) (*trade.GetOrderResp
 				Amount:   orderDTO.TotalAmount.Amount,
 				Currency: orderDTO.TotalAmount.Currency,
 			},
-			Note:           orderDTO.Note,
-			TrackingNumber: orderDTO.TrackingNumber,
-			PaymentMethod:  orderDTO.PaymentMethod,
-			ShippingMethod: orderDTO.ShippingMethod,
-			CreatedAt:      orderDTO.CreatedAt.Unix(),
-			UpdatedAt:      orderDTO.UpdatedAt.Unix(),
+			Note:              orderDTO.Note,
+			TrackingNumber:    orderDTO.TrackingNumber,
+			PaymentMethod:     orderDTO.PaymentMethod,
+			ShippingMethod:    orderDTO.ShippingMethod,
+			RefundRequestedAt: orderDTO.RefundRequestedAt.Unix(),
+			RefundReason:      orderDTO.RefundReason,
+			RefundAmount: &trade.Money{
+				Amount:   orderDTO.RefundAmount.Amount,
+				Currency: orderDTO.RefundAmount.Currency,
+			},
+			RefundedAt:    orderDTO.RefundedAt.Unix(),
+			RefundMethod:  orderDTO.RefundMethod,
+			RefundTransaction: orderDTO.RefundTransaction,
+			CreatedAt:     orderDTO.CreatedAt.Unix(),
+			UpdatedAt:     orderDTO.UpdatedAt.Unix(),
 		},
 	}, nil
 }

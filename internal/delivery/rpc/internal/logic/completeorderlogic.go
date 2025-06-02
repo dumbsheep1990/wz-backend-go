@@ -10,31 +10,34 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
-type GetOrderLogic struct {
+type CompleteOrderLogic struct {
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
 	logx.Logger
 }
 
-func NewGetOrderLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetOrderLogic {
-	return &GetOrderLogic{
+func NewCompleteOrderLogic(ctx context.Context, svcCtx *svc.ServiceContext) *CompleteOrderLogic {
+	return &CompleteOrderLogic{
 		ctx:    ctx,
 		svcCtx: svcCtx,
 		Logger: logx.WithContext(ctx),
 	}
 }
 
-func (l *GetOrderLogic) GetOrder(in *trade.GetOrderRequest) (*trade.GetOrderResponse, error) {
-	// 构建查询DTO
-	query := dto.GetOrderQuery{
+func (l *CompleteOrderLogic) CompleteOrder(in *trade.CompleteOrderRequest) (*trade.CompleteOrderResponse, error) {
+	// 构建完成订单命令
+	cmd := dto.CompleteOrderCommand{
 		OrderID: in.OrderId,
+		// 可添加客户评价或其他完成时的补充信息
+		CustomerFeedback: in.CustomerFeedback,
 	}
 
 	// 调用应用服务
-	orderDTO, err := l.svcCtx.OrderApplicationService.GetOrder(l.ctx, query)
+	orderDTO, err := l.svcCtx.OrderApplicationService.CompleteOrder(l.ctx, cmd)
 	if err != nil {
-		l.Error("Failed to get order", logx.Field("error", err), logx.Field("orderId", in.OrderId))
-		return &trade.GetOrderResponse{
+		l.Error("Failed to complete order", logx.Field("error", err), 
+			logx.Field("orderId", in.OrderId))
+		return &trade.CompleteOrderResponse{
 			Success: false,
 			Error:   err.Error(),
 		}, nil
@@ -76,7 +79,7 @@ func (l *GetOrderLogic) GetOrder(in *trade.GetOrderRequest) (*trade.GetOrderResp
 	}
 
 	// 构建响应
-	return &trade.GetOrderResponse{
+	return &trade.CompleteOrderResponse{
 		Success: true,
 		Order: &trade.Order{
 			Id:           orderDTO.ID,
@@ -108,6 +111,9 @@ func (l *GetOrderLogic) GetOrder(in *trade.GetOrderRequest) (*trade.GetOrderResp
 			ShippingMethod: orderDTO.ShippingMethod,
 			CreatedAt:      orderDTO.CreatedAt.Unix(),
 			UpdatedAt:      orderDTO.UpdatedAt.Unix(),
+			ShippedAt:      orderDTO.ShippedAt.Unix(),
+			DeliveredAt:    orderDTO.DeliveredAt.Unix(),
+			CompletedAt:    orderDTO.CompletedAt.Unix(),
 		},
 	}, nil
 }

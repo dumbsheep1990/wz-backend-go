@@ -10,31 +10,38 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
-type GetOrderLogic struct {
+type PayOrderLogic struct {
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
 	logx.Logger
 }
 
-func NewGetOrderLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetOrderLogic {
-	return &GetOrderLogic{
+func NewPayOrderLogic(ctx context.Context, svcCtx *svc.ServiceContext) *PayOrderLogic {
+	return &PayOrderLogic{
 		ctx:    ctx,
 		svcCtx: svcCtx,
 		Logger: logx.WithContext(ctx),
 	}
 }
 
-func (l *GetOrderLogic) GetOrder(in *trade.GetOrderRequest) (*trade.GetOrderResponse, error) {
-	// 构建查询DTO
-	query := dto.GetOrderQuery{
-		OrderID: in.OrderId,
+func (l *PayOrderLogic) PayOrder(in *trade.PayOrderRequest) (*trade.PayOrderResponse, error) {
+	// 构建支付订单命令
+	cmd := dto.PayOrderCommand{
+		OrderID:       in.OrderId,
+		PaymentMethod: in.PaymentMethod,
+		TransactionID: in.TransactionId,
+		PaidAmount: dto.Money{
+			Amount:   in.PaidAmount.Amount,
+			Currency: in.PaidAmount.Currency,
+		},
 	}
 
 	// 调用应用服务
-	orderDTO, err := l.svcCtx.OrderApplicationService.GetOrder(l.ctx, query)
+	orderDTO, err := l.svcCtx.OrderApplicationService.PayOrder(l.ctx, cmd)
 	if err != nil {
-		l.Error("Failed to get order", logx.Field("error", err), logx.Field("orderId", in.OrderId))
-		return &trade.GetOrderResponse{
+		l.Error("Failed to pay order", logx.Field("error", err), 
+			logx.Field("orderId", in.OrderId))
+		return &trade.PayOrderResponse{
 			Success: false,
 			Error:   err.Error(),
 		}, nil
@@ -76,7 +83,7 @@ func (l *GetOrderLogic) GetOrder(in *trade.GetOrderRequest) (*trade.GetOrderResp
 	}
 
 	// 构建响应
-	return &trade.GetOrderResponse{
+	return &trade.PayOrderResponse{
 		Success: true,
 		Order: &trade.Order{
 			Id:           orderDTO.ID,
@@ -108,6 +115,8 @@ func (l *GetOrderLogic) GetOrder(in *trade.GetOrderRequest) (*trade.GetOrderResp
 			ShippingMethod: orderDTO.ShippingMethod,
 			CreatedAt:      orderDTO.CreatedAt.Unix(),
 			UpdatedAt:      orderDTO.UpdatedAt.Unix(),
+			PaidAt:         orderDTO.PaidAt.Unix(),
+			Transaction:    orderDTO.Transaction,
 		},
 	}, nil
 }
