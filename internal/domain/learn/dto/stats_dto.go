@@ -136,3 +136,61 @@ type CategoryDTO struct {
 	CoursesCount int          `json:"coursesCount"`
 	Children     []CategoryDTO `json:"children,omitempty"`
 }
+
+// ReviewDTO 评价信息DTO
+type ReviewDTO struct {
+	ID         string     `json:"id"`
+	UserID     string     `json:"userId"`
+	CourseID   string     `json:"courseId"`
+	Rating     int        `json:"rating"`
+	Content    string     `json:"content"`
+	Status     string     `json:"status"`
+	CreatedAt  time.Time  `json:"createdAt"`
+	UpdatedAt  time.Time  `json:"updatedAt"`
+	ApprovedAt *time.Time `json:"approvedAt"`
+}
+
+// CourseRatingStatsDTO 课程评分统计DTO
+type CourseRatingStatsDTO struct {
+	CourseID      string             `json:"courseId"`
+	AverageRating float64            `json:"averageRating"`
+	TotalCount    int64              `json:"totalCount"`
+	Distribution  map[int]int64      `json:"distribution"` // 评分分布：1-5星的数量
+}
+
+// ProgressDTO 学习进度DTO
+type ProgressDTO struct {
+	ID              string     `json:"id"`
+	UserID          string     `json:"userId"`
+	CourseID        string     `json:"courseId"`
+	LessonID        string     `json:"lessonId"`
+	Status          string     `json:"status"`
+	WatchedDuration int        `json:"watchedDuration"` // 已观看时长（秒）
+	TotalDuration   int        `json:"totalDuration"`   // 总时长（秒）
+	CompletionRate  float64    `json:"completionRate"`  // 完成率（0-1）
+	ProgressPercent int        `json:"progressPercent"` // 进度百分比（0-100）
+	LastWatchedAt   *time.Time `json:"lastWatchedAt"`
+	CompletedAt     *time.Time `json:"completedAt"`
+	CreatedAt       time.Time  `json:"createdAt"`
+	UpdatedAt       time.Time  `json:"updatedAt"`
+}
+
+// CourseProgressStatsDTO 课程学习进度统计DTO
+type CourseProgressStatsDTO struct {
+	CourseID        string  `json:"courseId"`
+	UserID          string  `json:"userId"`
+	OverallProgress float64 `json:"overallProgress"` // 整体进度（0-1）
+	CompletedCount  int64   `json:"completedCount"`  // 已完成课时数
+	InProgressCount int64   `json:"inProgressCount"` // 学习中课时数
+	TotalCount      int64   `json:"totalCount"`      // 总课时数
+	CompletionRate  float64 `json:"completionRate"`  // 完成率（0-1）
+}
+
+// UserProgressStatsDTO 用户整体学习进度统计DTO
+type UserProgressStatsDTO struct {
+	UserID          string  `json:"userId"`
+	OverallProgress float64 `json:"overallProgress"` // 整体学习进度（0-1）
+	CompletedCount  int64   `json:"completedCount"`  // 已完成课时总数
+	InProgressCount int64   `json:"inProgressCount"` // 学习中课时总数
+	TotalCount      int64   `json:"totalCount"`      // 总学习课时数
+}
