@@ -9,7 +9,28 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	pb "wz-backend-go/api/proto/component"
+	"github.com/wz-backend-go/internal/types"
 )
+
+type ComponentClientInterface interface {
+	// gRPC proto methods
+	GetComponentStats(ctx context.Context) (*pb.ComponentStatsResponse, error)
+	ListComponents(ctx context.Context, pageSize int32, pageNumber int32, categoryId string, filter string) (*pb.ListComponentsResponse, error)
+	GetComponent(ctx context.Context, id string) (*pb.Component, error)
+	CreateComponent(ctx context.Context, req *pb.CreateComponentRequest) (*pb.Component, error)
+	UpdateComponent(ctx context.Context, req *pb.UpdateComponentRequest) (*pb.Component, error)
+	DeleteComponent(ctx context.Context, id string) (*pb.DeleteComponentResponse, error)
+	
+	// Admin interface methods - wrapper for gRPC calls
+	GetComponentList(ctx context.Context, req *types.GetComponentListRequest) (*types.GetComponentListResponse, error)
+	CreateComponentAdmin(ctx context.Context, req *types.CreateComponentRequest) (*types.Component, error)
+	UpdateComponentAdmin(ctx context.Context, req *types.UpdateComponentRequest) (*types.Component, error)
+	DeleteComponentAdmin(ctx context.Context, req *types.DeleteComponentRequest) error
+	GetComponentDetail(ctx context.Context, req *types.GetComponentDetailRequest) (*types.Component, error)
+	PreviewComponent(ctx context.Context, req *types.PreviewComponentRequest) (*types.ComponentPreview, error)
+	ImportComponent(ctx context.Context, req *types.ImportComponentRequest) (*types.Component, error)
+	GetComponentTypes(ctx context.Context, req *types.GetComponentTypesRequest) ([]*types.ComponentType, error)
+}
 
 // ComponentClient 是组件服务的客户端封装
 type ComponentClient struct {
@@ -145,4 +166,127 @@ func (c *ComponentClient) PublishComponentVersion(ctx context.Context, component
 		ComponentId: componentId,
 		Version:     version,
 	})
+}
+
+// Admin interface methods - wrapper for gRPC calls
+func (c *ComponentClient) GetComponentList(ctx context.Context, req *types.GetComponentListRequest) (*types.GetComponentListResponse, error) {
+	// Call the existing gRPC method
+	resp, err := c.ListComponents(ctx, int32(req.PageSize), int32(req.Page), "", req.Name)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Convert response
+	var components []*types.Component
+	for _, comp := range resp.Components {
+		components = append(components, &types.Component{
+			ID:          comp.Id,
+			Name:        comp.Name,
+			Type:        comp.Category,
+			Description: comp.Description,
+			Code:        comp.Content,
+		})
+	}
+	
+	return &types.GetComponentListResponse{
+		Components: components,
+		Total:      int(resp.Total),
+	}, nil
+}
+
+func (c *ComponentClient) CreateComponentAdmin(ctx context.Context, req *types.CreateComponentRequest) (*types.Component, error) {
+	// Call the existing gRPC method
+	pbReq := &pb.CreateComponentRequest{
+		Name:        req.Name,
+		Description: req.Description,
+		Category:    req.Type,
+		Content:     req.Code,
+	}
+	
+	component, err := c.CreateComponent(ctx, pbReq)
+	if err != nil {
+		return nil, err
+	}
+	
+	return &types.Component{
+		ID:          component.Id,
+		Name:        component.Name,
+		Type:        component.Category,
+		Description: component.Description,
+		Code:        component.Content,
+	}, nil
+}
+
+func (c *ComponentClient) UpdateComponentAdmin(ctx context.Context, req *types.UpdateComponentRequest) (*types.Component, error) {
+	// Call the existing gRPC method
+	pbReq := &pb.UpdateComponentRequest{
+		Id:          fmt.Sprintf("%d", req.ID),
+		Name:        req.Name,
+		Description: req.Description,
+		Category:    req.Type,
+		Content:     req.Code,
+	}
+	
+	component, err := c.UpdateComponent(ctx, pbReq)
+	if err != nil {
+		return nil, err
+	}
+	
+	return &types.Component{
+		ID:          component.Id,
+		Name:        component.Name,
+		Type:        component.Category,
+		Description: component.Description,
+		Code:        component.Content,
+	}, nil
+}
+
+func (c *ComponentClient) DeleteComponentAdmin(ctx context.Context, req *types.DeleteComponentRequest) error {
+	_, err := c.DeleteComponent(ctx, fmt.Sprintf("%d", req.ID))
+	return err
+}
+
+func (c *ComponentClient) GetComponentDetail(ctx context.Context, req *types.GetComponentDetailRequest) (*types.Component, error) {
+	component, err := c.GetComponent(ctx, fmt.Sprintf("%d", req.ID))
+	if err != nil {
+		return nil, err
+	}
+	
+	return &types.Component{
+		ID:          component.Id,
+		Name:        component.Name,
+		Type:        component.Category,
+		Description: component.Description,
+		Code:        component.Content,
+	}, nil
+}
+
+func (c *ComponentClient) PreviewComponent(ctx context.Context, req *types.PreviewComponentRequest) (*types.ComponentPreview, error) {
+	// TODO: 实现组件预览逻辑
+	return &types.ComponentPreview{
+		HTML: "<div>Preview for component " + fmt.Sprintf("%d", req.ID) + "</div>",
+	}, nil
+}
+
+func (c *ComponentClient) ImportComponent(ctx context.Context, req *types.ImportComponentRequest) (*types.Component, error) {
+	// TODO: 实现组件导入逻辑
+	return &types.Component{}, nil
+}
+
+func (c *ComponentClient) GetComponentTypes(ctx context.Context, req *types.GetComponentTypesRequest) ([]*types.ComponentType, error) {
+	// Call the existing gRPC method for categories
+	resp, err := c.ListComponentCategories(ctx)
+	if err != nil {
+		return nil, err
+	}
+	
+	var types []*types.ComponentType
+	for _, cat := range resp.Categories {
+		types = append(types, &types.ComponentType{
+			Name:        cat.Name,
+			Description: cat.Description,
+		})
+	}
+	
+	return types, nil
 }

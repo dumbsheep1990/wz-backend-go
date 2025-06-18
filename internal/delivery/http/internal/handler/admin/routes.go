@@ -6,6 +6,12 @@ import (
 	"wz-backend-go/internal/application/admin"
 	"wz-backend-go/internal/application/admin/service"
 	"wz-backend-go/internal/delivery/http/internal/middleware"
+	"wz-backend-go/internal/handler/admin/navigation"
+	"wz-backend-go/internal/handler/admin/page"
+	"wz-backend-go/internal/handler/admin/link"
+	"wz-backend-go/internal/handler/admin/component"
+	"wz-backend-go/internal/handler/admin/theme"
+	"wz-backend-go/internal/client"
 )
 
 // RegisterRoutes 注册所有admin相关路由
@@ -19,6 +25,7 @@ func RegisterRoutes(
 	operationRecordService *service.OperationRecordApplicationService,
 	paramsService *service.ParamsApplicationService,
 	dashboardService *admin.DashboardService,
+	navigationClient client.NavigationClient,
 	jwtMiddleware *middleware.JWTMiddleware,
 	casbinMiddleware *middleware.CasbinMiddleware,
 ) {
@@ -32,6 +39,7 @@ func RegisterRoutes(
 	operationRecordHandler := NewOperationRecordHandler(operationRecordService)
 	paramsHandler := NewParamsHandler(paramsService)
 	dashboardHandler := NewDashboardHandler(dashboardService)
+	navigationHandler := navigation.NewNavigationAdminHandler(navigationClient)
 
 	// API路径前缀
 	apiV1 := r.Group("/api/v1")
@@ -103,6 +111,25 @@ func RegisterRoutes(
 				menuRoutes.POST("/addMenuAuthority", menuHandler.AddMenuAuthority)
 			}
 
+			// 导航管理
+			navigationRoutes := authGroup.Group("/navigation")
+			{
+				// 主导航管理
+				navigationRoutes.GET("/main", navigationHandler.GetMainNavigation)
+				navigationRoutes.POST("/main", navigationHandler.SaveMainNavigation)
+				navigationRoutes.DELETE("/main/:id", navigationHandler.DeleteMainNavigationItem)
+				
+				// 底部导航管理
+				navigationRoutes.GET("/footer", navigationHandler.GetFooterNavigation)
+				navigationRoutes.POST("/footer", navigationHandler.SaveFooterNavigation)
+				navigationRoutes.DELETE("/footer/:id", navigationHandler.DeleteFooterNavigationItem)
+				
+				// 侧边导航管理
+				navigationRoutes.GET("/side", navigationHandler.GetSideNavigation)
+				navigationRoutes.POST("/side", navigationHandler.SaveSideNavigation)
+				navigationRoutes.DELETE("/side/:id", navigationHandler.DeleteSideNavigationItem)
+			}
+
 			// 系统管理
 			systemRoutes := authGroup.Group("/system")
 			{
@@ -160,5 +187,112 @@ func RegisterRoutes(
 				dashboardRoutes.GET("/renderStats", dashboardHandler.GetRenderStats)
 			}
 		}
+	}
+}
+
+// SetupSiteManagementRoutes 设置站点管理相关路由
+func SetupSiteManagementRoutes(
+	r *gin.Engine,
+	pageClient client.PageClientInterface,
+	linkClient client.LinkClientInterface,
+	componentClient client.ComponentClientInterface,
+	themeClient client.ThemeClientInterface,
+	jwtMiddleware *middleware.JWTMiddleware,
+) {
+	// 导入新的处理器包
+	pageHandler := page.NewPageHandler(pageClient)
+	linkHandler := link.NewLinkHandler(linkClient)
+	componentHandler := component.NewComponentHandler(componentClient)
+	themeHandler := theme.NewThemeHandler(themeClient)
+
+	adminGroup := r.Group("/api/v1/admin")
+	adminGroup.Use(jwtMiddleware.Handler())
+
+	// 页面管理路由
+	pageGroup := adminGroup.Group("/pages")
+	{
+		pageGroup.GET("", pageHandler.GetPageList)
+		pageGroup.POST("", pageHandler.CreatePage)
+		pageGroup.GET("/:id", pageHandler.GetPageDetail)
+		pageGroup.PUT("/:id", pageHandler.UpdatePage)
+		pageGroup.DELETE("/:id", pageHandler.DeletePage)
+		pageGroup.POST("/:id/toggle-status", pageHandler.TogglePageStatus)
+		pageGroup.GET("/:id/preview", pageHandler.PreviewPage)
+		pageGroup.POST("/batch-update", pageHandler.BatchUpdate)
+	}
+
+	// 链接管理路由
+	linkGroup := adminGroup.Group("/links")
+	{
+		linkGroup.GET("", linkHandler.GetLinkList)
+		linkGroup.POST("", linkHandler.CreateLink)
+		linkGroup.GET("/:id", linkHandler.GetLinkDetail)
+		linkGroup.PUT("/:id", linkHandler.UpdateLink)
+		linkGroup.DELETE("/:id", linkHandler.DeleteLink)
+		linkGroup.POST("/:id/verify", linkHandler.VerifyLink)
+		linkGroup.POST("/batch-verify", linkHandler.BatchVerifyLinks)
+		linkGroup.GET("/categories", linkHandler.GetLinkCategories)
+		linkGroup.PUT("/sort", linkHandler.UpdateLinkSort)
+	}
+
+	// 组件管理路由
+	componentGroup := adminGroup.Group("/components")
+	{
+		componentGroup.GET("", componentHandler.GetComponentList)
+		componentGroup.POST("", componentHandler.CreateComponent)
+		componentGroup.GET("/:id", componentHandler.GetComponentDetail)
+		componentGroup.PUT("/:id", componentHandler.UpdateComponent)
+		componentGroup.DELETE("/:id", componentHandler.DeleteComponent)
+		componentGroup.GET("/:id/preview", componentHandler.PreviewComponent)
+		componentGroup.POST("/import", componentHandler.ImportComponent)
+		componentGroup.GET("/types", componentHandler.GetComponentTypes)
+	}
+
+	// 主题管理路由
+	themeGroup := adminGroup.Group("/themes")
+	{
+		themeGroup.GET("", themeHandler.GetThemeList)
+		themeGroup.POST("", themeHandler.CreateTheme)
+		themeGroup.GET("/:id", themeHandler.GetThemeDetail)
+		themeGroup.PUT("/:id", themeHandler.UpdateTheme)
+		themeGroup.DELETE("/:id", themeHandler.DeleteTheme)
+		themeGroup.POST("/:id/apply", themeHandler.ApplyTheme)
+		themeGroup.GET("/:id/preview", themeHandler.PreviewTheme)
+		themeGroup.GET("/:id/export", themeHandler.ExportTheme)
+		themeGroup.POST("/import", themeHandler.ImportTheme)
+		themeGroup.GET("/current", themeHandler.GetCurrentTheme)
+	}
+}
+
+// SetupTreeNavigationRoutes 设置树形导航管理路由
+func SetupTreeNavigationRoutes(
+	r *gin.Engine,
+	treeNavigationClient client.TreeNavigationClientInterface,
+	jwtMiddleware *middleware.JWTMiddleware,
+) {
+	// 树形导航处理器
+	treeNavHandler := navigation.NewTreeNavigationHandler(treeNavigationClient)
+
+	adminGroup := r.Group("/api/v1/admin")
+	adminGroup.Use(jwtMiddleware.Handler())
+
+	// 树形导航管理路由
+	treeNavGroup := adminGroup.Group("/tree-navigation")
+	{
+		// 基础CRUD操作
+		treeNavGroup.GET("", treeNavHandler.GetNavigationTree)               // 获取导航树 ?type=main|footer|sidebar
+		treeNavGroup.POST("", treeNavHandler.CreateNavigationItem)           // 创建导航项
+		treeNavGroup.GET("/:id", treeNavHandler.GetNavigationItem)           // 获取导航项详情
+		treeNavGroup.PUT("/:id", treeNavHandler.UpdateNavigationItem)        // 更新导航项
+		treeNavGroup.DELETE("/:id", treeNavHandler.DeleteNavigationItem)     // 删除导航项
+
+		// 高级功能
+		treeNavGroup.PUT("/order", treeNavHandler.UpdateNavigationOrder)               // 更新排序
+		treeNavGroup.PUT("/:id/visibility", treeNavHandler.ToggleNavigationVisibility) // 切换可见性
+		treeNavGroup.DELETE("/batch", treeNavHandler.BatchDeleteNavigationItems)       // 批量删除
+
+		// 导入导出
+		treeNavGroup.GET("/export", treeNavHandler.ExportNavigationTree)  // 导出导航树
+		treeNavGroup.POST("/import", treeNavHandler.ImportNavigationTree) // 导入导航树
 	}
 }

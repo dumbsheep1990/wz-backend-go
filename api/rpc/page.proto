@@ -1,0 +1,132 @@
+syntax = "proto3";
+
+package page;
+
+option go_package = "./page";
+
+// 页面服务
+service PageService {
+  // 获取页面列表
+  rpc GetPageList(GetPageListRequest) returns (GetPageListResponse);
+  // 创建页面
+  rpc CreatePage(CreatePageRequest) returns (PageResponse);
+  // 获取页面详情
+  rpc GetPageDetail(GetPageDetailRequest) returns (PageResponse);
+  // 更新页面
+  rpc UpdatePage(UpdatePageRequest) returns (PageResponse);
+  // 删除页面
+  rpc DeletePage(DeletePageRequest) returns (DeletePageResponse);
+  // 切换页面状态
+  rpc TogglePageStatus(TogglePageStatusRequest) returns (PageResponse);
+  // 预览页面
+  rpc PreviewPage(PreviewPageRequest) returns (PreviewPageResponse);
+  // 批量更新页面
+  rpc BatchUpdatePage(BatchUpdatePageRequest) returns (BatchUpdatePageResponse);
+}
+
+// 页面实体
+message Page {
+  string id = 1;
+  string title = 2;
+  string path = 3;
+  string type = 4;
+  string content = 5;
+  string seo_title = 6;
+  string seo_desc = 7;
+  string seo_keywords = 8;
+  string status = 9;
+  string created_at = 10;
+  string updated_at = 11;
+}
+
+// 获取页面列表请求
+message GetPageListRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+  string title = 3;
+  string status = 4;
+  string type = 5;
+}
+
+// 获取页面列表响应
+message GetPageListResponse {
+  repeated Page pages = 1;
+  int32 total = 2;
+}
+
+// 创建页面请求
+message CreatePageRequest {
+  string title = 1;
+  string path = 2;
+  string type = 3;
+  string content = 4;
+  string seo_title = 5;
+  string seo_desc = 6;
+  string seo_keywords = 7;
+  string status = 8;
+}
+
+// 获取页面详情请求
+message GetPageDetailRequest {
+  string id = 1;
+}
+
+// 更新页面请求
+message UpdatePageRequest {
+  string id = 1;
+  string title = 2;
+  string path = 3;
+  string type = 4;
+  string content = 5;
+  string seo_title = 6;
+  string seo_desc = 7;
+  string seo_keywords = 8;
+  string status = 9;
+}
+
+// 删除页面请求
+message DeletePageRequest {
+  string id = 1;
+}
+
+// 删除页面响应
+message DeletePageResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// 切换页面状态请求
+message TogglePageStatusRequest {
+  string id = 1;
+  string status = 2;
+}
+
+// 预览页面请求
+message PreviewPageRequest {
+  string id = 1;
+}
+
+// 预览页面响应
+message PreviewPageResponse {
+  string html = 1;
+  string css = 2;
+  string js = 3;
+}
+
+// 批量更新页面请求
+message BatchUpdatePageRequest {
+  repeated string ids = 1;
+  string status = 2;
+  string type = 3;
+}
+
+// 批量更新页面响应
+message BatchUpdatePageResponse {
+  int32 updated_count = 1;
+  string message = 2;
+}
+
+// 页面响应
+message PageResponse {
+  Page page = 1;
+} 

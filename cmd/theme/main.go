@@ -14,10 +14,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
 	
-	"github.com/wz-backend-go/internal/delivery/http/handler/page"
-	pageRPC "github.com/wz-backend-go/internal/delivery/rpc/page"
+	"github.com/wz-backend-go/internal/delivery/http/handler/theme"
+	themeRPC "github.com/wz-backend-go/internal/delivery/rpc/theme"
 	"github.com/wz-backend-go/internal/middleware"
-	pb "wz-backend-go/api/rpc/page"
+	pb "wz-backend-go/api/rpc/theme"
 )
 
 func main() {
@@ -44,42 +44,42 @@ func main() {
 	})
 
 	// 创建HTTP处理器
-	pageHandler := page.NewPageHandler()
+	themeHandler := theme.NewThemeHandler()
 
 	// 注册HTTP路由
-	setupRoutes(r, pageHandler)
+	setupRoutes(r, themeHandler)
 
 	// 启动HTTP服务器
-	httpPort := getEnv("PAGE_HTTP_PORT", "8010")
+	httpPort := getEnv("THEME_HTTP_PORT", "8011")
 	httpServer := &http.Server{
 		Addr:    ":" + httpPort,
 		Handler: r,
 	}
 
 	// 启动gRPC服务器
-	grpcPort := getEnv("PAGE_GRPC_PORT", "50010")
+	grpcPort := getEnv("THEME_GRPC_PORT", "50011")
 	grpcLis, err := net.Listen("tcp", ":"+grpcPort)
 	if err != nil {
-		log.Fatalf("Page gRPC服务监听失败: %v", err)
+		log.Fatalf("Theme gRPC服务监听失败: %v", err)
 	}
 
 	grpcServer := grpc.NewServer()
-	pageRPCServer := pageRPC.NewPageServer()
-	pb.RegisterPageServiceServer(grpcServer, pageRPCServer)
+	themeRPCServer := themeRPC.NewThemeServer()
+	pb.RegisterThemeServiceServer(grpcServer, themeRPCServer)
 
 	// 启动HTTP服务
 	go func() {
-		log.Printf("Page HTTP服务启动在端口 %s", httpPort)
+		log.Printf("Theme HTTP服务启动在端口 %s", httpPort)
 		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Page HTTP服务启动失败: %v", err)
+			log.Fatalf("Theme HTTP服务启动失败: %v", err)
 		}
 	}()
 
 	// 启动gRPC服务
 	go func() {
-		log.Printf("Page gRPC服务启动在端口 %s", grpcPort)
+		log.Printf("Theme gRPC服务启动在端口 %s", grpcPort)
 		if err := grpcServer.Serve(grpcLis); err != nil {
-			log.Fatalf("Page gRPC服务启动失败: %v", err)
+			log.Fatalf("Theme gRPC服务启动失败: %v", err)
 		}
 	}()
 
@@ -87,7 +87,7 @@ func main() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
-	log.Println("正在关闭Page服务...")
+	log.Println("正在关闭Theme服务...")
 
 	// 5秒内优雅关闭
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -95,22 +95,22 @@ func main() {
 
 	// 关闭HTTP服务
 	if err := httpServer.Shutdown(ctx); err != nil {
-		log.Printf("Page HTTP服务关闭失败: %v", err)
+		log.Printf("Theme HTTP服务关闭失败: %v", err)
 	}
 
 	// 关闭gRPC服务
 	grpcServer.GracefulStop()
 
-	log.Println("Page服务已退出")
+	log.Println("Theme服务已退出")
 }
 
 // setupRoutes 设置路由
-func setupRoutes(r *gin.Engine, pageHandler *page.PageHandler) {
+func setupRoutes(r *gin.Engine, themeHandler *theme.ThemeHandler) {
 	// 健康检查
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"status":  "ok",
-			"service": "page-service",
+			"service": "theme-service",
 			"time":    time.Now().Unix(),
 		})
 	})
@@ -118,17 +118,19 @@ func setupRoutes(r *gin.Engine, pageHandler *page.PageHandler) {
 	// API路由
 	apiV1 := r.Group("/api/v1")
 	{
-		// 页面管理路由
-		pageRoutes := apiV1.Group("/pages")
+		// 主题管理路由
+		themeRoutes := apiV1.Group("/themes")
 		{
-			pageRoutes.GET("", pageHandler.GetPageList)
-			pageRoutes.POST("", pageHandler.CreatePage)
-			pageRoutes.GET("/:id", pageHandler.GetPageDetail)
-			pageRoutes.PUT("/:id", pageHandler.UpdatePage)
-			pageRoutes.DELETE("/:id", pageHandler.DeletePage)
-			pageRoutes.POST("/:id/toggle-status", pageHandler.TogglePageStatus)
-			pageRoutes.GET("/:id/preview", pageHandler.PreviewPage)
-			pageRoutes.POST("/batch-update", pageHandler.BatchUpdate)
+			themeRoutes.GET("", themeHandler.GetThemeList)
+			themeRoutes.POST("", themeHandler.CreateTheme)
+			themeRoutes.GET("/:id", themeHandler.GetThemeDetail)
+			themeRoutes.PUT("/:id", themeHandler.UpdateTheme)
+			themeRoutes.DELETE("/:id", themeHandler.DeleteTheme)
+			themeRoutes.POST("/:id/apply", themeHandler.ApplyTheme)
+			themeRoutes.GET("/:id/preview", themeHandler.PreviewTheme)
+			themeRoutes.GET("/:id/export", themeHandler.ExportTheme)
+			themeRoutes.POST("/import", themeHandler.ImportTheme)
+			themeRoutes.GET("/current", themeHandler.GetCurrentTheme)
 		}
 	}
 }
@@ -139,4 +141,4 @@ func getEnv(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
-}
+} 

@@ -29,55 +29,85 @@ var services = []ServiceConfig{
 	},
 	{
 		Name:    "用户服务",
-		CmdPath: "./services/user-service/main.go",
-		Args:    []string{"run", "./services/user-service/main.go"},
+		CmdPath: "./cmd/user/main.go",
+		Args:    []string{"run", "./cmd/user/main.go"},
 	},
 	{
 		Name:    "内容服务",
-		CmdPath: "./services/content-service/main.go",
-		Args:    []string{"run", "./services/content-service/main.go"},
+		CmdPath: "./cmd/content/main.go",
+		Args:    []string{"run", "./cmd/content/main.go"},
 	},
 	{
-		Name:    "文件服务",
-		CmdPath: "./services/file-service/main.go",
-		Args:    []string{"run", "./services/file-service/main.go"},
+		Name:    "AI服务",
+		CmdPath: "./cmd/ai/main.go",
+		Args:    []string{"run", "./cmd/ai/main.go"},
 	},
 	{
-		Name:    "交互服务",
-		CmdPath: "./services/interaction-service/main.go",
-		Args:    []string{"run", "./services/interaction-service/main.go"},
+		Name:    "学习服务",
+		CmdPath: "./cmd/learn/main.go",
+		Args:    []string{"run", "./cmd/learn/main.go"},
 	},
 	{
-		Name:    "后台管理服务",
-		CmdPath: "./services/admin-service/main.go",
-		Args:    []string{"run", "./services/admin-service/main.go"},
+		Name:    "商务服务",
+		CmdPath: "./cmd/commerce/main.go",
+		Args:    []string{"run", "./cmd/commerce/main.go"},
 	},
 	{
 		Name:    "交易服务",
-		CmdPath: "./services/trade-service/main.go",
-		Args:    []string{"run", "./services/trade-service/main.go"},
+		CmdPath: "./cmd/trade/main.go",
+		Args:    []string{"run", "./cmd/trade/main.go"},
 	},
 	{
-		Name:    "渲染服务",
-		CmdPath: "./services/render-service/main.go",
-		Args:    []string{"run", "./services/render-service/main.go"},
+		Name:    "导航服务",
+		CmdPath: "./cmd/navigation/main.go",
+		Args:    []string{"run", "./cmd/navigation/main.go"},
 	},
 	{
-		Name:    "组件服务",
-		CmdPath: "./services/component-service/main.go",
-		Args:    []string{"run", "./services/component-service/main.go"},
+		Name:    "后台管理服务",
+		CmdPath: "./cmd/admin/main.go",
+		Args:    []string{"run", "./cmd/admin/main.go"},
 	},
 	{
 		Name:    "页面服务",
-		CmdPath: "./services/page-service/main.go",
-		Args:    []string{"run", "./services/page-service/main.go"},
+		CmdPath: "./cmd/page/main.go",
+		Args:    []string{"run", "./cmd/page/main.go"},
 	},
 	{
 		Name:    "站点服务",
-		CmdPath: "./services/site-service/main.go",
-		Args:    []string{"run", "./services/site-service/main.go"},
+		CmdPath: "./cmd/site/main.go",
+		Args:    []string{"run", "./cmd/site/main.go"},
 	},
-	// 可根据需要添加更多服务
+	{
+		Name:    "组件服务",
+		CmdPath: "./cmd/component/main.go",
+		Args:    []string{"run", "./cmd/component/main.go"},
+	},
+	{
+		Name:    "渲染服务",
+		CmdPath: "./cmd/render-service/main.go",
+		Args:    []string{"run", "./cmd/render-service/main.go"},
+	},
+	{
+		Name:    "主题服务",
+		CmdPath: "./cmd/theme/main.go",
+		Args:    []string{"run", "./cmd/theme/main.go"},
+	},
+	// RPC服务（可选启动）
+	{
+		Name:    "内容RPC服务",
+		CmdPath: "./cmd/rpc/content/main.go",
+		Args:    []string{"run", "./cmd/rpc/content/main.go"},
+	},
+	{
+		Name:    "AI RPC服务",
+		CmdPath: "./cmd/rpc/ai/main.go",
+		Args:    []string{"run", "./cmd/rpc/ai/main.go"},
+	},
+	{
+		Name:    "交易RPC服务",
+		CmdPath: "./cmd/rpc/trade/main.go",
+		Args:    []string{"run", "./cmd/rpc/trade/main.go"},
+	},
 }
 
 func main() {
@@ -91,18 +121,25 @@ func main() {
 	runGateway := flag.Bool("gateway", false, "运行API网关服务")
 	runUser := flag.Bool("user", false, "运行用户服务")
 	runContent := flag.Bool("content", false, "运行内容服务")
+	runAI := flag.Bool("ai", false, "运行AI服务")
+	runLearn := flag.Bool("learn", false, "运行学习服务")
+	runCommerce := flag.Bool("commerce", false, "运行商务服务")
 	runTrade := flag.Bool("trade", false, "运行交易服务")
-	runRender := flag.Bool("render", false, "运行渲染服务")
-	runComponent := flag.Bool("component", false, "运行组件服务")
+	runNavigation := flag.Bool("navigation", false, "运行导航服务")
+	runAdmin := flag.Bool("admin", false, "运行后台管理服务")
 	runPage := flag.Bool("page", false, "运行页面服务")
 	runSite := flag.Bool("site", false, "运行站点服务")
+	runComponent := flag.Bool("component", false, "运行组件服务")
+	runRender := flag.Bool("render", false, "运行渲染服务")
+	runTheme := flag.Bool("theme", false, "运行主题服务")
+	runRPC := flag.Bool("rpc", false, "运行所有RPC服务")
 	flag.Parse()
 
 	var servicesToRun []ServiceConfig
 
 	// 根据命令行参数选择要运行的服务
 	if *runAll {
-		servicesToRun = services
+		servicesToRun = services[:14] // 不包含RPC服务
 	} else {
 		if *runGateway {
 			servicesToRun = append(servicesToRun, services[0])
@@ -113,13 +150,22 @@ func main() {
 		if *runContent {
 			servicesToRun = append(servicesToRun, services[2])
 		}
+		if *runAI {
+			servicesToRun = append(servicesToRun, services[3])
+		}
+		if *runLearn {
+			servicesToRun = append(servicesToRun, services[4])
+		}
+		if *runCommerce {
+			servicesToRun = append(servicesToRun, services[5])
+		}
 		if *runTrade {
 			servicesToRun = append(servicesToRun, services[6])
 		}
-		if *runRender {
+		if *runNavigation {
 			servicesToRun = append(servicesToRun, services[7])
 		}
-		if *runComponent {
+		if *runAdmin {
 			servicesToRun = append(servicesToRun, services[8])
 		}
 		if *runPage {
@@ -128,9 +174,23 @@ func main() {
 		if *runSite {
 			servicesToRun = append(servicesToRun, services[10])
 		}
-		// 如果没有指定任何服务，则默认运行网关和用户服务
+		if *runComponent {
+			servicesToRun = append(servicesToRun, services[11])
+		}
+		if *runRender {
+			servicesToRun = append(servicesToRun, services[12])
+		}
+		if *runTheme {
+			servicesToRun = append(servicesToRun, services[13])
+		}
+		if *runRPC {
+			// 添加所有RPC服务
+			servicesToRun = append(servicesToRun, services[14:]...)
+		}
+		// 如果没有指定任何服务，则默认运行核心服务
 		if len(servicesToRun) == 0 {
-			servicesToRun = append(servicesToRun, services[0], services[1])
+			fmt.Println("未指定服务，运行核心服务（网关、用户、内容、AI）...")
+			servicesToRun = append(servicesToRun, services[0], services[1], services[2], services[3])
 		}
 	}
 

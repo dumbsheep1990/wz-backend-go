@@ -1,0 +1,158 @@
+syntax = "proto3";
+
+package theme;
+
+option go_package = "./theme";
+
+// 主题服务
+service ThemeService {
+  // 获取主题列表
+  rpc GetThemeList(GetThemeListRequest) returns (GetThemeListResponse);
+  // 创建主题
+  rpc CreateTheme(CreateThemeRequest) returns (ThemeResponse);
+  // 获取主题详情
+  rpc GetThemeDetail(GetThemeDetailRequest) returns (ThemeResponse);
+  // 更新主题
+  rpc UpdateTheme(UpdateThemeRequest) returns (ThemeResponse);
+  // 删除主题
+  rpc DeleteTheme(DeleteThemeRequest) returns (DeleteThemeResponse);
+  // 应用主题
+  rpc ApplyTheme(ApplyThemeRequest) returns (ApplyThemeResponse);
+  // 获取当前主题
+  rpc GetCurrentTheme(GetCurrentThemeRequest) returns (ThemeResponse);
+  // 预览主题
+  rpc PreviewTheme(PreviewThemeRequest) returns (PreviewThemeResponse);
+  // 导出主题
+  rpc ExportTheme(ExportThemeRequest) returns (ExportThemeResponse);
+  // 导入主题
+  rpc ImportTheme(ImportThemeRequest) returns (ThemeResponse);
+}
+
+// 主题实体
+message Theme {
+  int64 id = 1;
+  string name = 2;
+  string description = 3;
+  string primary_color = 4;
+  string text_color = 5;
+  string header_color = 6;
+  string logo_color = 7;
+  string menu_text_color = 8;
+  string content_bg_color = 9;
+  string sidebar_color = 10;
+  string sidebar_text_color = 11;
+  string card_color = 12;
+  string link_color = 13;
+  bool is_default = 14;
+  bool is_current = 15;
+  string created_at = 16;
+  string updated_at = 17;
+}
+
+// 获取主题列表请求
+message GetThemeListRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+  string name = 3;
+}
+
+// 获取主题列表响应
+message GetThemeListResponse {
+  repeated Theme themes = 1;
+  int32 total = 2;
+}
+
+// 创建主题请求
+message CreateThemeRequest {
+  string name = 1;
+  string description = 2;
+  string primary_color = 3;
+  string text_color = 4;
+  string header_color = 5;
+  string logo_color = 6;
+  string menu_text_color = 7;
+  string content_bg_color = 8;
+  string sidebar_color = 9;
+  string sidebar_text_color = 10;
+  string card_color = 11;
+  string link_color = 12;
+}
+
+// 获取主题详情请求
+message GetThemeDetailRequest {
+  int64 id = 1;
+}
+
+// 更新主题请求
+message UpdateThemeRequest {
+  int64 id = 1;
+  string name = 2;
+  string description = 3;
+  string primary_color = 4;
+  string text_color = 5;
+  string header_color = 6;
+  string logo_color = 7;
+  string menu_text_color = 8;
+  string content_bg_color = 9;
+  string sidebar_color = 10;
+  string sidebar_text_color = 11;
+  string card_color = 12;
+  string link_color = 13;
+}
+
+// 删除主题请求
+message DeleteThemeRequest {
+  int64 id = 1;
+}
+
+// 删除主题响应
+message DeleteThemeResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// 应用主题请求
+message ApplyThemeRequest {
+  int64 id = 1;
+}
+
+// 应用主题响应
+message ApplyThemeResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// 获取当前主题请求
+message GetCurrentThemeRequest {
+}
+
+// 预览主题请求
+message PreviewThemeRequest {
+  int64 id = 1;
+}
+
+// 预览主题响应
+message PreviewThemeResponse {
+  string css = 1;
+}
+
+// 导出主题请求
+message ExportThemeRequest {
+  int64 id = 1;
+}
+
+// 导出主题响应
+message ExportThemeResponse {
+  string data = 1;
+  string type = 2;
+}
+
+// 导入主题请求
+message ImportThemeRequest {
+  string data = 1;
+}
+
+// 主题响应
+message ThemeResponse {
+  Theme theme = 1;
+} 

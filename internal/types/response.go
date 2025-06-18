@@ -2,6 +2,13 @@ package types
 
 import "time"
 
+// Response 通用API响应结构
+type Response struct {
+	Code    int         `json:"code"`
+	Message string      `json:"message"`
+	Data    interface{} `json:"data"`
+}
+
 // UserPointsResponse 用户积分响应
 type UserPointsResponse struct {
 	ID          int64     `json:"id"`           // ID
@@ -115,4 +122,174 @@ type PointsRulesResponse struct {
 	ExchangeRate      int       `json:"exchange_rate"`       // 兑换比例
 	MinExchangePoints int       `json:"min_exchange_points"` // 最小兑换积分
 	UpdatedAt         time.Time `json:"updated_at"`          // 更新时间
+}
+
+// Page management responses
+type Page struct {
+	ID          string    `json:"id"`
+	Title       string    `json:"title"`
+	Path        string    `json:"path"`
+	Type        string    `json:"type"`
+	Content     string    `json:"content"`
+	SeoTitle    string    `json:"seo_title"`
+	SeoDesc     string    `json:"seo_desc"`
+	SeoKeywords string    `json:"seo_keywords"`
+	Status      string    `json:"status"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+type GetPageListResponse struct {
+	Pages []*Page `json:"pages"`
+	Total int     `json:"total"`
+}
+
+type PagePreview struct {
+	HTML string `json:"html"`
+	CSS  string `json:"css"`
+	JS   string `json:"js"`
+}
+
+// Link management responses
+type Link struct {
+	ID          int64     `json:"id"`
+	Name        string    `json:"name"`
+	URL         string    `json:"url"`
+	Category    string    `json:"category"`
+	Icon        string    `json:"icon"`
+	Description string    `json:"description"`
+	Sort        int       `json:"sort"`
+	NewWindow   bool      `json:"new_window"`
+	IsActive    bool      `json:"is_active"`
+	Status      string    `json:"status"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+type GetLinkListResponse struct {
+	Links []*Link `json:"links"`
+	Total int     `json:"total"`
+}
+
+type LinkVerifyResult struct {
+	IsValid      bool   `json:"is_valid"`
+	ResponseCode int    `json:"response_code"`
+	ResponseTime int64  `json:"response_time"`
+	ErrorMessage string `json:"error_message"`
+}
+
+type BatchVerifyResult struct {
+	SuccessCount int `json:"success_count"`
+	FailCount    int `json:"fail_count"`
+	TotalCount   int `json:"total_count"`
+}
+
+type LinkCategory struct {
+	Key         string `json:"key"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+// Component management responses
+type Component struct {
+	ID          string    `json:"id"`
+	Name        string    `json:"name"`
+	Type        string    `json:"type"`
+	Description string    `json:"description"`
+	Thumbnail   string    `json:"thumbnail"`
+	Code        string    `json:"code"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+type GetComponentListResponse struct {
+	Components []*Component `json:"components"`
+	Total      int          `json:"total"`
+}
+
+type ComponentPreview struct {
+	HTML string `json:"html"`
+	CSS  string `json:"css"`
+	JS   string `json:"js"`
+}
+
+type ComponentType struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+// Theme management responses
+type Theme struct {
+	ID                int64     `json:"id"`
+	Name              string    `json:"name"`
+	Description       string    `json:"description"`
+	PrimaryColor      string    `json:"primary_color"`
+	TextColor         string    `json:"text_color"`
+	HeaderColor       string    `json:"header_color"`
+	LogoColor         string    `json:"logo_color"`
+	MenuTextColor     string    `json:"menu_text_color"`
+	ContentBgColor    string    `json:"content_bg_color"`
+	SidebarColor      string    `json:"sidebar_color"`
+	SidebarTextColor  string    `json:"sidebar_text_color"`
+	CardColor         string    `json:"card_color"`
+	LinkColor         string    `json:"link_color"`
+	IsDefault         bool      `json:"is_default"`
+	IsCurrent         bool      `json:"is_current"`
+	CreatedAt         time.Time `json:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at"`
+}
+
+type GetThemeListResponse struct {
+	Themes []*Theme `json:"themes"`
+	Total  int      `json:"total"`
+}
+
+type ApplyThemeResult struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+}
+
+type ThemePreview struct {
+	CSS string `json:"css"`
+}
+
+type ThemeExport struct {
+	Data string `json:"data"`
+	Type string `json:"type"`
+}
+
+// 树形导航管理响应类型
+
+// NavigationItem 导航项
+type NavigationItem struct {
+	ID        int64             `json:"id"`
+	Name      string            `json:"name"`
+	URL       string            `json:"url"`
+	Icon      string            `json:"icon"`
+	Visible   bool              `json:"visible"`
+	NewWindow bool              `json:"newWindow"`
+	ParentID  *int64            `json:"parentId"`
+	SortOrder int32             `json:"sortOrder"`
+	Type      string            `json:"type"`
+	Children  []*NavigationItem `json:"children"`
+	CreatedAt string            `json:"createdAt,omitempty"`
+	UpdatedAt string            `json:"updatedAt,omitempty"`
+}
+
+// GetNavigationTreeResponse 获取导航树响应
+type GetNavigationTreeResponse struct {
+	NavigationTree []*NavigationItem `json:"navigationTree"`
+}
+
+// NavigationTreeExport 导航树导出数据
+type NavigationTreeExport struct {
+	Data string `json:"data"`
+	Type string `json:"type"`
+}
+
+// NavigationTreeImportResult 导航树导入结果
+type NavigationTreeImportResult struct {
+	Success       bool   `json:"success"`
+	ImportedCount int    `json:"importedCount"`
+	Message       string `json:"message"`
 }

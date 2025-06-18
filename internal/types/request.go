@@ -232,3 +232,301 @@ type PointsRulesRequest struct {
 	ExchangeRate      int  `json:"exchange_rate"`       // 兑换比例
 	MinExchangePoints int  `json:"min_exchange_points"` // 最小兑换积分
 }
+
+// Page management types
+type GetPageListRequest struct {
+	Page     int    `form:"page"`
+	PageSize int    `form:"pageSize"`
+	Type     string `form:"type"`
+	Status   string `form:"status"`
+	Title    string `form:"title"`
+}
+
+type CreatePageRequest struct {
+	Title       string `json:"title" binding:"required"`
+	Path        string `json:"path" binding:"required"`
+	Type        string `json:"type" binding:"required"`
+	Content     string `json:"content"`
+	SeoTitle    string `json:"seo_title"`
+	SeoDesc     string `json:"seo_desc"`
+	SeoKeywords string `json:"seo_keywords"`
+	Status      string `json:"status"`
+}
+
+type UpdatePageRequest struct {
+	ID          int64  `json:"id"`
+	Title       string `json:"title" binding:"required"`
+	Path        string `json:"path" binding:"required"`
+	Type        string `json:"type" binding:"required"`
+	Content     string `json:"content"`
+	SeoTitle    string `json:"seo_title"`
+	SeoDesc     string `json:"seo_desc"`
+	SeoKeywords string `json:"seo_keywords"`
+	Status      string `json:"status"`
+}
+
+type DeletePageRequest struct {
+	ID int64 `json:"id"`
+}
+
+type GetPageDetailRequest struct {
+	ID int64 `json:"id"`
+}
+
+type TogglePageStatusRequest struct {
+	ID     int64  `json:"id"`
+	Status string `json:"status"`
+}
+
+type PreviewPageRequest struct {
+	ID int64 `json:"id"`
+}
+
+type BatchUpdatePageRequest struct {
+	IDs    []int64 `json:"ids"`
+	Status string  `json:"status"`
+}
+
+// Link management types
+type GetLinkListRequest struct {
+	Page     int    `form:"page"`
+	PageSize int    `form:"pageSize"`
+	Category string `form:"category"`
+	Status   string `form:"status"`
+	Name     string `form:"name"`
+}
+
+type CreateLinkRequest struct {
+	Name        string `json:"name" binding:"required"`
+	URL         string `json:"url" binding:"required"`
+	Category    string `json:"category" binding:"required"`
+	Icon        string `json:"icon"`
+	Description string `json:"description"`
+	Sort        int    `json:"sort"`
+	NewWindow   bool   `json:"new_window"`
+	IsActive    bool   `json:"is_active"`
+}
+
+type UpdateLinkRequest struct {
+	ID          int64  `json:"id"`
+	Name        string `json:"name" binding:"required"`
+	URL         string `json:"url" binding:"required"`
+	Category    string `json:"category" binding:"required"`
+	Icon        string `json:"icon"`
+	Description string `json:"description"`
+	Sort        int    `json:"sort"`
+	NewWindow   bool   `json:"new_window"`
+	IsActive    bool   `json:"is_active"`
+}
+
+type DeleteLinkRequest struct {
+	ID int64 `json:"id"`
+}
+
+type GetLinkDetailRequest struct {
+	ID int64 `json:"id"`
+}
+
+type VerifyLinkRequest struct {
+	ID int64 `json:"id"`
+}
+
+type BatchVerifyLinksRequest struct {
+	IDs []int64 `json:"ids"`
+}
+
+type GetLinkCategoriesRequest struct {
+}
+
+type UpdateLinkSortRequest struct {
+	SortData []struct {
+		ID   int64 `json:"id"`
+		Sort int   `json:"sort"`
+	} `json:"sort_data"`
+}
+
+// Component management types
+type GetComponentListRequest struct {
+	Page     int    `form:"page"`
+	PageSize int    `form:"pageSize"`
+	Type     string `form:"type"`
+	Name     string `form:"name"`
+}
+
+type CreateComponentRequest struct {
+	Name        string `json:"name" binding:"required"`
+	Type        string `json:"type" binding:"required"`
+	Description string `json:"description"`
+	Thumbnail   string `json:"thumbnail"`
+	Code        string `json:"code" binding:"required"`
+}
+
+type UpdateComponentRequest struct {
+	ID          int64  `json:"id"`
+	Name        string `json:"name" binding:"required"`
+	Type        string `json:"type" binding:"required"`
+	Description string `json:"description"`
+	Thumbnail   string `json:"thumbnail"`
+	Code        string `json:"code" binding:"required"`
+}
+
+type DeleteComponentRequest struct {
+	ID int64 `json:"id"`
+}
+
+type GetComponentDetailRequest struct {
+	ID int64 `json:"id"`
+}
+
+type PreviewComponentRequest struct {
+	ID int64 `json:"id"`
+}
+
+type ImportComponentRequest struct {
+	Source string `json:"source" binding:"required"`
+}
+
+type GetComponentTypesRequest struct {
+}
+
+// Theme management types  
+type GetThemeListRequest struct {
+	Page     int    `form:"page"`
+	PageSize int    `form:"pageSize"`
+	Name     string `form:"name"`
+}
+
+type CreateThemeRequest struct {
+	Name              string `json:"name" binding:"required"`
+	Description       string `json:"description"`
+	PrimaryColor      string `json:"primary_color" binding:"required"`
+	TextColor         string `json:"text_color"`
+	HeaderColor       string `json:"header_color"`
+	LogoColor         string `json:"logo_color"`
+	MenuTextColor     string `json:"menu_text_color"`
+	ContentBgColor    string `json:"content_bg_color"`
+	SidebarColor      string `json:"sidebar_color"`
+	SidebarTextColor  string `json:"sidebar_text_color"`
+	CardColor         string `json:"card_color"`
+	LinkColor         string `json:"link_color"`
+}
+
+type UpdateThemeRequest struct {
+	ID                int64  `json:"id"`
+	Name              string `json:"name" binding:"required"`
+	Description       string `json:"description"`
+	PrimaryColor      string `json:"primary_color" binding:"required"`
+	TextColor         string `json:"text_color"`
+	HeaderColor       string `json:"header_color"`
+	LogoColor         string `json:"logo_color"`
+	MenuTextColor     string `json:"menu_text_color"`
+	ContentBgColor    string `json:"content_bg_color"`
+	SidebarColor      string `json:"sidebar_color"`
+	SidebarTextColor  string `json:"sidebar_text_color"`
+	CardColor         string `json:"card_color"`
+	LinkColor         string `json:"link_color"`
+}
+
+type DeleteThemeRequest struct {
+	ID int64 `json:"id"`
+}
+
+type GetThemeDetailRequest struct {
+	ID int64 `json:"id"`
+}
+
+type ApplyThemeRequest struct {
+	ID int64 `json:"id"`
+}
+
+type GetCurrentThemeRequest struct {
+}
+
+type PreviewThemeRequest struct {
+	ID int64 `json:"id"`
+}
+
+type ExportThemeRequest struct {
+	ID int64 `json:"id"`
+}
+
+type ImportThemeRequest struct {
+	Data string `json:"data" binding:"required"`
+}
+
+// 树形导航管理请求类型
+
+// GetNavigationTreeRequest 获取导航树请求
+type GetNavigationTreeRequest struct {
+	Type string `json:"type" form:"type"` // main, footer, sidebar
+}
+
+// CreateNavigationItemRequest 创建导航项请求
+type CreateNavigationItemRequest struct {
+	Name      string `json:"name" binding:"required"`
+	URL       string `json:"url" binding:"required"`
+	Icon      string `json:"icon"`
+	Visible   bool   `json:"visible"`
+	NewWindow bool   `json:"newWindow"`
+	ParentID  *int64 `json:"parentId"`
+	SortOrder int32  `json:"sortOrder"`
+	Type      string `json:"type"` // main, footer, sidebar
+}
+
+// UpdateNavigationItemRequest 更新导航项请求
+type UpdateNavigationItemRequest struct {
+	ID        int64  `json:"id"`
+	Name      string `json:"name" binding:"required"`
+	URL       string `json:"url" binding:"required"`
+	Icon      string `json:"icon"`
+	Visible   bool   `json:"visible"`
+	NewWindow bool   `json:"newWindow"`
+	ParentID  *int64 `json:"parentId"`
+	SortOrder int32  `json:"sortOrder"`
+	Type      string `json:"type"`
+}
+
+// DeleteNavigationItemRequest 删除导航项请求
+type DeleteNavigationItemRequest struct {
+	ID int64 `json:"id"`
+}
+
+// GetNavigationItemRequest 获取导航项详情请求
+type GetNavigationItemRequest struct {
+	ID int64 `json:"id"`
+}
+
+// UpdateNavigationOrderRequest 更新导航排序请求
+type UpdateNavigationOrderRequest struct {
+	Type      string                        `json:"type"`
+	OrderData []NavigationOrderItemRequest `json:"orderData"`
+}
+
+// NavigationOrderItemRequest 导航排序项目
+type NavigationOrderItemRequest struct {
+	ID       int64 `json:"id"`
+	ParentID *int64 `json:"parentId"`
+	Order    int32 `json:"order"`
+}
+
+// ToggleNavigationVisibilityRequest 切换导航可见性请求
+type ToggleNavigationVisibilityRequest struct {
+	ID      int64 `json:"id"`
+	Visible bool  `json:"visible"`
+}
+
+// BatchDeleteNavigationItemsRequest 批量删除导航项请求
+type BatchDeleteNavigationItemsRequest struct {
+	IDs []int64 `json:"ids"`
+}
+
+// ExportNavigationTreeRequest 导出导航树请求
+type ExportNavigationTreeRequest struct {
+	Type string `json:"type"`
+}
+
+// ImportNavigationTreeRequest 导入导航树请求
+type ImportNavigationTreeRequest struct {
+	Type string `json:"type"`
+	Data string `json:"data"`
+}
